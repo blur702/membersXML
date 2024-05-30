@@ -51,13 +51,13 @@ document.getElementById('searchField').addEventListener('input', () => {
             <div class="result">
               <img src="${photoURL}" alt="Photo of ${capitalizeWords(firstname)} ${capitalizeWords(lastname)}">
               <div class="details">
-                <strong>${capitalizeWords(prefix)} ${capitalizeWords(firstname)} ${capitalizeWords(middleName)} ${capitalizeWords(lastname)} ${capitalizeWords(suffix)} (${capitalizeWords(party)})</strong><br>
-                ${capitalizeWords(state)} - District ${capitalizeWords(district)}<br>
-                Office ID: ${officeID.toUpperCase()} ${createCopyIcon(officeID.toUpperCase(), 'Office ID')}<br>
-                Bioguide ID: ${bioguideID} ${createCopyIcon(bioguideID, 'Bioguide ID')}<br>
-                Office Audit ID: ${officeAuditID} ${createCopyIcon(officeAuditID, 'Office Audit ID')}<br>
-                <a href="${website}" target="_blank">Website</a>
+                <div><strong>${capitalizeWords(prefix)} ${capitalizeWords(firstname)} ${capitalizeWords(middleName)} ${capitalizeWords(lastname)} ${capitalizeWords(suffix)} (${capitalizeWords(party)})</strong></div>
+                <div>${capitalizeWords(state)} - District ${capitalizeWords(district)}</div>
+                <div class="spacing">Office ID: <span>${officeID.toUpperCase()}</span>${createCopyIcon(officeID.toUpperCase(), 'Office ID')}</div>
+                <div>Bioguide ID: <span>${bioguideID}</span>${createCopyIcon(bioguideID, 'Bioguide ID')}</div>
+                <div>Office Audit ID: <span>${officeAuditID}</span>${createCopyIcon(officeAuditID, 'Office Audit ID')}</div>
               </div>
+              <a class="website" href="${website}" target="_blank">Website</a>
             </div>`;
                 }
             }
