@@ -2,11 +2,14 @@
 <html>
 <head>
     <title>Search Members</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         body {
             width: 300px;
             padding: 10px;
             font-family: Arial, sans-serif;
+            background-color: #001f3f; /* Navy-blue background */
+            color: white;
         }
         input {
             width: 100%;
@@ -16,10 +19,36 @@
             max-width: 100%;
         }
         .result {
-            border: 1px solid #ccc;
+            display: flex;
+            align-items: flex-start;
+            border: 1px solid #007bff;
             padding: 10px;
             margin-bottom: 10px;
-            background-color: #f9f9f9;
+            background-color: #0056b3; /* Lighter blue background for contrast */
+            color: white;
+        }
+        .result img {
+            width: auto;
+            height: 100px; /* Adjust height as needed */
+            margin-right: 10px;
+        }
+        .result .details {
+            flex-grow: 1;
+            position: relative;
+        }
+        .result .details a {
+            display: block;
+            text-align: center;
+            margin-top: 5px;
+            color: #ffc107; /* High contrast yellow color for accessibility */
+            text-decoration: none;
+        }
+        .result .details .icon {
+            margin-left: 5px;
+            cursor: pointer;
+            color: #ffc107; /* Icon color matching the link */
+            position: absolute;
+            right: 0;
         }
         .container {
             max-width: 100%;
@@ -29,7 +58,7 @@
             display: block;
             margin-top: 10px;
             text-align: center;
-            color: blue;
+            color: #ffc107; /* High contrast yellow color */
             text-decoration: none;
         }
 
@@ -40,27 +69,45 @@
                 color: black;
             }
             .result {
-                border-color: #ccc;
-                background-color: #f9f9f9;
+                border-color: #007bff;
+                background-color: #0056b3;
             }
             a {
-                color: blue;
+                color: #007bff;
+            }
+            .result .details a, .result .details .icon {
+                color: #007bff;
             }
         }
 
         /* Dark mode styles */
         @media (prefers-color-scheme: dark) {
             body {
-                background-color: #121212;
+                background-color: #001f3f;
                 color: white;
             }
             .result {
-                border-color: #444;
-                background-color: #333;
+                border-color: #007bff;
+                background-color: #0056b3;
             }
             a {
-                color: lightblue;
+                color: #ffc107;
             }
+            .result .details a, .result .details .icon {
+                color: #ffc107;
+            }
+        }
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
         }
     </style>
 </head>

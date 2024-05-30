@@ -9,6 +9,10 @@ document.getElementById('searchField').addEventListener('input', () => {
             const members = data.getElementsByTagName('Member');
             let results = '';
 
+            const createCopyIcon = (text, id) => {
+                return `<i class="fas fa-copy icon" data-text="${text}" data-id="${id}"></i>`;
+            };
+
             for (let member of members) {
                 const firstname = member.getAttribute('firstname') ? member.getAttribute('firstname').toLowerCase() : '';
                 const lastname = member.getAttribute('lastname') ? member.getAttribute('lastname').toLowerCase() : '';
@@ -23,6 +27,7 @@ document.getElementById('searchField').addEventListener('input', () => {
                 const prefix = member.getAttribute('prefix') ? member.getAttribute('prefix').toLowerCase() : '';
                 const middleName = member.getAttribute('middle_name') ? member.getAttribute('middle_name').toLowerCase() : '';
                 const suffix = member.getAttribute('suffix') ? member.getAttribute('suffix').toLowerCase() : '';
+                const photoURL = member.getAttribute('photoURL') ? member.getAttribute('photoURL') : '';
 
                 const capitalizeWords = (str) => {
                     return str.replace(/\b\w/g, char => char.toUpperCase());
@@ -44,17 +49,44 @@ document.getElementById('searchField').addEventListener('input', () => {
                 ) {
                     results += `
             <div class="result">
-              <strong>${capitalizeWords(prefix)} ${capitalizeWords(firstname)} ${capitalizeWords(middleName)} ${capitalizeWords(lastname)} ${capitalizeWords(suffix)} (${capitalizeWords(party)})</strong><br>
-              ${capitalizeWords(state)} - District ${capitalizeWords(district)}<br>
-              Office ID: ${officeID.toUpperCase()}<br>
-              Bioguide ID: ${bioguideID}<br>
-              Office Audit ID: ${officeAuditID}<br>
-              <a href="${website}" target="_blank">Website</a>
+              <img src="${photoURL}" alt="Photo of ${capitalizeWords(firstname)} ${capitalizeWords(lastname)}">
+              <div class="details">
+                <strong>${capitalizeWords(prefix)} ${capitalizeWords(firstname)} ${capitalizeWords(middleName)} ${capitalizeWords(lastname)} ${capitalizeWords(suffix)} (${capitalizeWords(party)})</strong><br>
+                ${capitalizeWords(state)} - District ${capitalizeWords(district)}<br>
+                Office ID: ${officeID.toUpperCase()} ${createCopyIcon(officeID.toUpperCase(), 'Office ID')}<br>
+                Bioguide ID: ${bioguideID} ${createCopyIcon(bioguideID, 'Bioguide ID')}<br>
+                Office Audit ID: ${officeAuditID} ${createCopyIcon(officeAuditID, 'Office Audit ID')}<br>
+                <a href="${website}" target="_blank">Website</a>
+              </div>
             </div>`;
                 }
             }
             document.getElementById('results').innerHTML = results;
+
+            // Add event listeners for copy icons
+            document.querySelectorAll('.icon').forEach(icon => {
+                icon.addEventListener('click', (event) => {
+                    const text = event.currentTarget.getAttribute('data-text');
+                    const id = event.currentTarget.getAttribute('data-id');
+                    copyToClipboard(text, id);
+                });
+            });
         }
     });
 });
-// Compare this snippet from popup.js:
+
+function copyToClipboard(text, id) {
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification(`Copied ${id} to clipboard: ${text}`);
+    });
+}
+
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.innerText = message;
+    document.body.appendChild(notification);
+    setTimeout(() => {
+        notification.remove();
+    }, 2000);
+}
