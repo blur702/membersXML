@@ -12,8 +12,8 @@
             width: 100%;
             padding: 10px;
             margin-bottom: 10px;
-            box-sizing: border-box; /* Ensures the padding is included in the total width */
-            max-width: 100%; /* Prevents the input from exceeding the container width */
+            box-sizing: border-box;
+            max-width: 100%;
         }
         .result {
             border: 1px solid #ccc;
@@ -25,12 +25,50 @@
             max-width: 100%;
             box-sizing: border-box;
         }
+        a {
+            display: block;
+            margin-top: 10px;
+            text-align: center;
+            color: blue;
+            text-decoration: none;
+        }
+
+        /* Light mode styles */
+        @media (prefers-color-scheme: light) {
+            body {
+                background-color: white;
+                color: black;
+            }
+            .result {
+                border-color: #ccc;
+                background-color: #f9f9f9;
+            }
+            a {
+                color: blue;
+            }
+        }
+
+        /* Dark mode styles */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #121212;
+                color: white;
+            }
+            .result {
+                border-color: #444;
+                background-color: #333;
+            }
+            a {
+                color: lightblue;
+            }
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <input type="text" id="searchField" placeholder="Enter member name, office ID, or other details">
     <div id="results"></div>
+    <a href="options.html" target="_blank">Settings</a>
 </div>
 <script src="popup.js"></script>
 </body>

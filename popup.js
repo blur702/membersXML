@@ -1,9 +1,11 @@
 document.getElementById('searchField').addEventListener('input', () => {
     const searchTerm = document.getElementById('searchField').value.toLowerCase();
-    fetch(chrome.runtime.getURL('xml/members.xml'))
-        .then(response => response.text())
-        .then(str => (new window.DOMParser()).parseFromString(str, 'text/xml'))
-        .then(data => {
+
+    // Fetch the XML data from local storage
+    chrome.storage.local.get('membersXML', result => {
+        if (result.membersXML) {
+            const parser = new DOMParser();
+            const data = parser.parseFromString(result.membersXML, 'text/xml');
             const members = data.getElementsByTagName('Member');
             let results = '';
 
@@ -52,5 +54,7 @@ document.getElementById('searchField').addEventListener('input', () => {
                 }
             }
             document.getElementById('results').innerHTML = results;
-        });
+        }
+    });
 });
+// Compare this snippet from popup.js:
