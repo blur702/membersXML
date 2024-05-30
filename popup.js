@@ -51,13 +51,18 @@ document.getElementById('searchField').addEventListener('input', () => {
             <div class="result">
               <img src="${photoURL}" alt="Photo of ${capitalizeWords(firstname)} ${capitalizeWords(lastname)}">
               <div class="details">
-                <div><strong>${capitalizeWords(prefix)} ${capitalizeWords(firstname)} ${capitalizeWords(middleName)} ${capitalizeWords(lastname)} ${capitalizeWords(suffix)} (${capitalizeWords(party)})</strong></div>
-                <div>${capitalizeWords(state)} - District ${capitalizeWords(district)}</div>
-                <div class="spacing">Office ID: <span>${officeID.toUpperCase()}</span>${createCopyIcon(officeID.toUpperCase(), 'Office ID')}</div>
-                <div>Bioguide ID: <span>${bioguideID}</span>${createCopyIcon(bioguideID, 'Bioguide ID')}</div>
-                <div>Office Audit ID: <span>${officeAuditID}</span>${createCopyIcon(officeAuditID, 'Office Audit ID')}</div>
+              <div class="name-state-district">
+                <div class="name"><strong>${capitalizeWords(prefix)} ${capitalizeWords(firstname)} ${capitalizeWords(middleName)} ${capitalizeWords(lastname)} ${capitalizeWords(suffix)} (${capitalizeWords(party)})</strong></div>
+                <div class="state-district">${capitalizeWords(state)} - District ${capitalizeWords(district)}</div>
+                </div>
+                <div class="office-id"><span class="label">Office ID:</span><span>${officeID.toUpperCase()}</span><span>${createCopyIcon(officeID.toUpperCase(), 'Office ID')}</span></div>
+              
+                <div class="bioguide"><span class="label">Bioguide ID:</span> <span>${bioguideID}</span><span>${createCopyIcon(bioguideID, 'Bioguide ID')}</span></div>
+                <div class="auditid"><span class="label">Office Audit ID:</span> <span>${officeAuditID}</span><span>${createCopyIcon(officeAuditID, 'Office Audit ID')}</span></div>
               </div>
-              <a class="website" href="${website}" target="_blank">Website</a>
+              <div class="links">
+                <a class="website" href="${website}" target="_blank">Website</a>
+              </div>
             </div>`;
                 }
             }
