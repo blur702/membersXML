@@ -133,6 +133,9 @@ a.settings-link {
     .copy-icon {
         color: #007bff;
     }
+    .state-district {
+        color: #0056b3;
+    }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -150,4 +153,94 @@ a.settings-link {
     .copy-icon {
         color: #ffc107;
     }
+    .state-district {
+        color: #ffc107;
+    }
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 8px;
+}
+
+input#searchField {
+    margin-bottom: 0;  /* Remove the existing margin since it's handled by search-container */
+}
+
+.clear-button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+    cursor: pointer;
+    white-space: nowrap;
+    color: #333;
+}
+
+.clear-button:hover {
+    background-color: #e0e0e0;
+}
+
+.xml-diff-notification {
+    background-color: #007bff;
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.xml-diff-notification a {
+    color: white;
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.diff-container {
+    padding: 10px;
+}
+
+.diff-added {
+    background-color: rgba(40, 167, 69, 0.2);
+    padding: 8px;
+    margin: 4px 0;
+    border-left: 4px solid #28a745;
+}
+
+.diff-removed {
+    background-color: rgba(220, 53, 69, 0.2);
+    padding: 8px;
+    margin: 4px 0;
+    border-left: 4px solid #dc3545;
+}
+
+.diff-modified {
+    background-color: rgba(255, 193, 7, 0.2);
+    padding: 8px;
+    margin: 4px 0;
+    border-left: 4px solid #ffc107;
+}
+
+.name-container {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.name {
+    font-weight: bold;
+    font-size: 1.25em;
+    margin-right: 10px;
+}
+
+.state-district {
+    color: #ffc107;
+    font-size: 0.9em;
 }

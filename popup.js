@@ -82,13 +82,19 @@ function performSearch(searchTerm) {
                     middleName.includes(searchTerm) ||
                     suffix.includes(searchTerm)
                 ) {
+                    const fullName = `${capitalizeWords(prefix)} ${capitalizeWords(firstname)} ${capitalizeWords(middleName)} ${capitalizeWords(lastname)} ${capitalizeWords(suffix)}`;
                     results += `
 <div class="wrapper">
   <div class="result">
     <img src="${photoURL}" alt="Photo of ${capitalizeWords(firstname)} ${capitalizeWords(lastname)}">
     <div class="details">
-      <div class="name-state-district">
-        <div class="name"><strong>${capitalizeWords(prefix)} ${capitalizeWords(firstname)} ${capitalizeWords(middleName)} ${capitalizeWords(lastname)} ${capitalizeWords(suffix)} (${capitalizeWords(party)})</strong></div>
+      <div class="name-container">
+        <div class="name-row">
+          <div class="name">
+            <strong>${fullName} (${capitalizeWords(party)})</strong>
+          </div>
+          <span class="copy-icon">${createCopyIcon(fullName, 'Name')}</span>
+        </div>
         <div class="state-district">${capitalizeWords(state)} - District ${capitalizeWords(district)}</div>
       </div>
       <div class="office-details">
@@ -106,15 +112,14 @@ function performSearch(searchTerm) {
           <span class="label">Office Audit ID:</span>
           <span class="info">${officeAuditID}</span>
           <span class="copy-icon">${createCopyIcon(officeAuditID, 'Office Audit ID')}</span>
-        </div>      <div class="links">
-      <a class="website" href="${website}" target="_blank">Visit Website</a>
-    </div>
+        </div>
+        <div class="links">
+          <a class="website" href="${website}" target="_blank">Visit Website</a>
+        </div>
       </div>
     </div>
   </div>
-
-</div>
-`;
+</div>`;
                 }
             }
             document.getElementById('results').innerHTML = results;
@@ -148,4 +153,133 @@ function showNotification(message) {
     setTimeout(() => {
         notification.remove();
     }, 2000);
+}
+
+// Function to compare XML data
+function compareXMLData(oldXML, newXML) {
+    const changes = {
+        added: [],
+        removed: [],
+        modified: []
+    };
+    
+    const oldDoc = new DOMParser().parseFromString(oldXML, 'text/xml');
+    const newDoc = new DOMParser().parseFromString(newXML, 'text/xml');
+    
+    const oldMembers = Array.from(oldDoc.getElementsByTagName('Member'));
+    const newMembers = Array.from(newDoc.getElementsByTagName('Member'));
+    
+    // Create maps for easier comparison
+    const oldMemberMap = new Map(oldMembers.map(m => [m.getAttribute('bioguide_id'), m]));
+    const newMemberMap = new Map(newMembers.map(m => [m.getAttribute('bioguide_id'), m]));
+    
+    // Find added and modified members
+    newMembers.forEach(member => {
+        const bioguideId = member.getAttribute('bioguide_id');
+        const oldMember = oldMemberMap.get(bioguideId);
+        
+        if (!oldMember) {
+            changes.added.push(formatMemberData(member));
+        } else if (membersAreDifferent(oldMember, member)) {
+            changes.modified.push({
+                old: formatMemberData(oldMember),
+                new: formatMemberData(member)
+            });
+        }
+    });
+    
+    // Find removed members
+    oldMembers.forEach(member => {
+        const bioguideId = member.getAttribute('bioguide_id');
+        if (!newMemberMap.has(bioguideId)) {
+            changes.removed.push(formatMemberData(member));
+        }
+    });
+    
+    return changes;
+}
+
+function membersAreDifferent(oldMember, newMember) {
+    const attributes = ['firstname', 'lastname', 'party', 'state', 'district', 'office_id'];
+    return attributes.some(attr => 
+        oldMember.getAttribute(attr) !== newMember.getAttribute(attr)
+    );
+}
+
+function formatMemberData(member) {
+    return {
+        name: `${member.getAttribute('firstname')} ${member.getAttribute('lastname')}`,
+        party: member.getAttribute('party'),
+        state: member.getAttribute('state'),
+        district: member.getAttribute('district'),
+        officeId: member.getAttribute('office_id')
+    };
+}
+
+// Add this to your existing chrome.storage.onChanged listener
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && changes.membersXML) {
+        const oldXML = changes.membersXML.oldValue;
+        const newXML = changes.membersXML.newValue;
+        
+        if (oldXML && newXML) {
+            const xmlDiffs = compareXMLData(oldXML, newXML);
+            if (xmlDiffs.added.length || xmlDiffs.removed.length || xmlDiffs.modified.length) {
+                // Store the diffs for later viewing
+                chrome.storage.local.set({ xmlDiffs: xmlDiffs });
+                showXMLDiffNotification();
+            }
+        }
+    }
+});
+
+function showXMLDiffNotification() {
+    const notification = document.getElementById('xmlDiffNotification');
+    notification.style.display = 'block';
+}
+
+// Add click handler for viewing changes
+document.getElementById('viewChangesLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    chrome.storage.local.get('xmlDiffs', (result) => {
+        if (result.xmlDiffs) {
+            displayXMLDiffs(result.xmlDiffs);
+        }
+    });
+});
+
+function displayXMLDiffs(diffs) {
+    let diffHTML = '<div class="diff-container">';
+    
+    if (diffs.added.length) {
+        diffHTML += '<h3>Added Members:</h3>';
+        diffs.added.forEach(member => {
+            diffHTML += `<div class="diff-added">
+                <p>+ ${member.name} (${member.party}-${member.state}) District ${member.district}</p>
+            </div>`;
+        });
+    }
+    
+    if (diffs.removed.length) {
+        diffHTML += '<h3>Removed Members:</h3>';
+        diffs.removed.forEach(member => {
+            diffHTML += `<div class="diff-removed">
+                <p>- ${member.name} (${member.party}-${member.state}) District ${member.district}</p>
+            </div>`;
+        });
+    }
+    
+    if (diffs.modified.length) {
+        diffHTML += '<h3>Modified Members:</h3>';
+        diffs.modified.forEach(change => {
+            diffHTML += `<div class="diff-modified">
+                <p>From: ${change.old.name} (${change.old.party}-${change.old.state}) District ${change.old.district}</p>
+                <p>To: ${change.new.name} (${change.new.party}-${change.new.state}) District ${change.new.district}</p>
+            </div>`;
+        });
+    }
+    
+    diffHTML += '</div>';
+    
+    document.getElementById('results').innerHTML = diffHTML;
 }
