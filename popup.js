@@ -1,7 +1,42 @@
 document.getElementById('searchField').addEventListener('input', () => {
     const searchTerm = document.getElementById('searchField').value.toLowerCase();
+    performSearch(searchTerm);
+    // Save search term to storage with timestamp
+    chrome.storage.local.set({
+        lastSearch: {
+            term: searchTerm,
+            timestamp: Date.now()
+        }
+    });
+});
 
-    // Fetch the XML data from local storage
+// Add clear button event listener
+document.getElementById('clearButton').addEventListener('click', () => {
+    document.getElementById('searchField').value = '';
+    document.getElementById('results').innerHTML = '';
+    chrome.storage.local.remove('lastSearch');
+});
+
+// Function to check and restore last search
+function restoreLastSearch() {
+    chrome.storage.local.get('lastSearch', result => {
+        if (result.lastSearch) {
+            const { term, timestamp } = result.lastSearch;
+            const fifteenMinutes = 15 * 60 * 1000; // 15 minutes in milliseconds
+            
+            if (Date.now() - timestamp < fifteenMinutes) {
+                document.getElementById('searchField').value = term;
+                performSearch(term);
+            } else {
+                // Clear expired search
+                chrome.storage.local.remove('lastSearch');
+            }
+        }
+    });
+}
+
+// Extract search functionality into separate function
+function performSearch(searchTerm) {
     chrome.storage.local.get('membersXML', result => {
         if (result.membersXML) {
             const parser = new DOMParser();
@@ -48,22 +83,38 @@ document.getElementById('searchField').addEventListener('input', () => {
                     suffix.includes(searchTerm)
                 ) {
                     results += `
-            <div class="result">
-              <img src="${photoURL}" alt="Photo of ${capitalizeWords(firstname)} ${capitalizeWords(lastname)}">
-              <div class="details">
-              <div class="name-state-district">
-                <div class="name"><strong>${capitalizeWords(prefix)} ${capitalizeWords(firstname)} ${capitalizeWords(middleName)} ${capitalizeWords(lastname)} ${capitalizeWords(suffix)} (${capitalizeWords(party)})</strong></div>
-                <div class="state-district">${capitalizeWords(state)} - District ${capitalizeWords(district)}</div>
-                </div>
-                <div class="office-id"><span class="label">Office ID:</span><span>${officeID.toUpperCase()}</span><span>${createCopyIcon(officeID.toUpperCase(), 'Office ID')}</span></div>
-              
-                <div class="bioguide"><span class="label">Bioguide ID:</span> <span>${bioguideID}</span><span>${createCopyIcon(bioguideID, 'Bioguide ID')}</span></div>
-                <div class="auditid"><span class="label">Office Audit ID:</span> <span>${officeAuditID}</span><span>${createCopyIcon(officeAuditID, 'Office Audit ID')}</span></div>
-              </div>
-              <div class="links">
-                <a class="website" href="${website}" target="_blank">Website</a>
-              </div>
-            </div>`;
+<div class="wrapper">
+  <div class="result">
+    <img src="${photoURL}" alt="Photo of ${capitalizeWords(firstname)} ${capitalizeWords(lastname)}">
+    <div class="details">
+      <div class="name-state-district">
+        <div class="name"><strong>${capitalizeWords(prefix)} ${capitalizeWords(firstname)} ${capitalizeWords(middleName)} ${capitalizeWords(lastname)} ${capitalizeWords(suffix)} (${capitalizeWords(party)})</strong></div>
+        <div class="state-district">${capitalizeWords(state)} - District ${capitalizeWords(district)}</div>
+      </div>
+      <div class="office-details">
+        <div class="office-id">
+          <span class="label">Office ID:</span>
+          <span class="info">${officeID.toUpperCase()}</span>
+          <span class="copy-icon">${createCopyIcon(officeID.toUpperCase(), 'Office ID')}</span>
+        </div>
+        <div class="bioguide">
+          <span class="label">Bioguide ID:</span>
+          <span class="info">${bioguideID}</span>
+          <span class="copy-icon">${createCopyIcon(bioguideID, 'Bioguide ID')}</span>
+        </div>
+        <div class="auditid">
+          <span class="label">Office Audit ID:</span>
+          <span class="info">${officeAuditID}</span>
+          <span class="copy-icon">${createCopyIcon(officeAuditID, 'Office Audit ID')}</span>
+        </div>      <div class="links">
+      <a class="website" href="${website}" target="_blank">Visit Website</a>
+    </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+`;
                 }
             }
             document.getElementById('results').innerHTML = results;
@@ -78,7 +129,10 @@ document.getElementById('searchField').addEventListener('input', () => {
             });
         }
     });
-});
+}
+
+// Call restoreLastSearch when popup opens
+document.addEventListener('DOMContentLoaded', restoreLastSearch);
 
 function copyToClipboard(text, id) {
     navigator.clipboard.writeText(text).then(() => {
