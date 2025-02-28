@@ -15,6 +15,17 @@
             margin-top: 10px;
             font-size: 14px;
         }
+        .setting-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        select {
+            padding: 5px;
+            margin-right: 10px;
+        }
 
         /* Light mode styles */
         @media (prefers-color-scheme: light) {
@@ -49,7 +60,19 @@
 </head>
 <body>
 <h1>Settings</h1>
-<button id="updateButton">Download and Update XML</button>
+<div class="setting-group">
+    <button id="updateButton">Download and Update XML</button>
+</div>
+<div class="setting-group">
+    <label for="updateInterval">Check for updates every:</label>
+    <select id="updateInterval">
+        <option value="720">12 hours</option>
+        <option value="1440" selected>24 hours</option>
+        <option value="2880">48 hours</option>
+        <option value="10080">Weekly</option>
+    </select>
+    <button id="saveIntervalButton">Save</button>
+</div>
 <div id="status"></div>
 <script src="options.js"></script>
 </body>
