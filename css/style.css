@@ -118,89 +118,6 @@ a.settings-link {
     z-index: 1000;
 }
 
-/* Committee dropdown styles */
-.committee-section {
-    width: 100%;
-    margin: 10px 0;
-    position: relative;
-}
-
-.committee-dropdown-btn {
-    width: 100%;
-    background-color: #007BFF;
-    color: #ffc107;
-    padding: 8px;
-    font-weight: bold;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: background-color 0.2s;
-}
-
-.committee-dropdown-btn.active {
-    background-color: #0056b3;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-.committee-dropdown-btn.inactive {
-    cursor: default;
-    opacity: 0.8;
-}
-
-.committee-dropdown-btn i {
-    margin-left: 5px;
-}
-
-.committee-dropdown-btn:hover:not(.inactive) {
-    background-color: #0069d9;
-}
-
-.committee-dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: #004182;
-    width: 100%;
-    border-radius: 0 0 5px 5px;
-    margin-top: 0;
-    z-index: 100;
-    max-height: 200px;
-    overflow-y: auto;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.committee-dropdown-content.show {
-    display: block;
-}
-
-.committee-dropdown-content ul {
-    list-style-type: none;
-    padding: 10px;
-    margin: 0;
-}
-
-.committee-dropdown-content li {
-    padding: 8px 5px;
-    border-bottom: 1px solid #0056b3;
-    text-align: left;
-}
-
-.committee-dropdown-content li:last-child {
-    border-bottom: none;
-}
-
-.no-committees {
-    color: #ccc;
-    font-style: italic;
-    text-align: center;
-    display: block;
-    width: 100%;
-}
-
 .loading {
     text-align: center;
     padding: 20px;
@@ -231,24 +148,6 @@ a.settings-link {
     .state-district {
         color: #0056b3;
     }
-    .committee-dropdown-btn {
-        color: white;
-        background-color: #007BFF;
-    }
-    .committee-dropdown-btn.active {
-        background-color: #0056b3;
-    }
-    .committee-dropdown-content {
-        background-color: #e6f2ff;
-        color: #333;
-    }
-    .committee-dropdown-content li {
-        border-bottom: 1px solid #cce5ff;
-        color: #333;
-    }
-    .no-committees {
-        color: #666;
-    }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -268,24 +167,6 @@ a.settings-link {
     }
     .state-district {
         color: #ffc107;
-    }
-    .committee-dropdown-btn {
-        color: #ffc107;
-        background-color: #007BFF;
-    }
-    .committee-dropdown-btn.active {
-        background-color: #0056b3;
-    }
-    .committee-dropdown-content {
-        background-color: #004182;
-        color: white;
-    }
-    .committee-dropdown-content li {
-        border-bottom: 1px solid #0056b3;
-        color: white;
-    }
-    .no-committees {
-        color: #ccc;
     }
 }
 
@@ -308,6 +189,7 @@ input#searchField {
     cursor: pointer;
     white-space: nowrap;
     color: #333;
+    margin-left: 8px;
 }
 
 .clear-button:hover {
