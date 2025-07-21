@@ -73,28 +73,23 @@ function performSearch(searchTerm) {
         let members = [];
         
         // Handle different possible JSON structures
-        if (data.Members && Array.isArray(data.Members)) {
+        if (data.members && data.members.member && Array.isArray(data.members.member)) {
+            // House.gov JSON API structure: data.members.member[]
+            members = data.members.member;
+        } else if (data.Members && Array.isArray(data.Members)) {
             members = data.Members;
         } else if (data.members && Array.isArray(data.members)) {
             members = data.members;
         } else if (Array.isArray(data)) {
             members = data;
+        } else if (data.MemberData && data.MemberData.Members && Array.isArray(data.MemberData.Members)) {
+            // XML converted format
+            members = data.MemberData.Members;
         } else {
             console.error('Unexpected JSON structure:', data);
             console.log('Available keys:', Object.keys(data));
-            console.log('Full data object:', JSON.stringify(data, null, 2));
-            
-            // Check for common House.gov API patterns
-            if (data.MemberData && data.MemberData.Members && Array.isArray(data.MemberData.Members)) {
-                members = data.MemberData.Members;
-            } else if (data.results && Array.isArray(data.results)) {
-                members = data.results;
-            } else if (data.response && Array.isArray(data.response)) {
-                members = data.response;
-            } else {
-                document.getElementById('results').innerHTML = '<div class="error">Unable to parse member data format. Check console for details.</div>';
-                return;
-            }
+            document.getElementById('results').innerHTML = '<div class="error">Unable to parse member data format. Check console for details.</div>';
+            return;
         }
 
         let results = '';
@@ -111,14 +106,16 @@ function performSearch(searchTerm) {
         const filteredMembers = members.filter(member => {
             if (!member) return false;
             
-            const firstname = member.firstname ? member.firstname.toLowerCase() : '';
-            const lastname = member.lastname ? member.lastname.toLowerCase() : '';
-            const party = member.party ? member.party.toLowerCase() : '';
-            const state = member.state ? member.state.toLowerCase() : '';
-            const district = member.district ? member.district.toLowerCase() : '';
-            const listingName = member.listing_name ? member.listing_name.toLowerCase() : '';
-            const officeID = member.office_id ? member.office_id.toLowerCase() : '';
-            const bioguideID = member.bioguide_id ? member.bioguide_id.toLowerCase() : '';
+            // Handle nested member-info structure from House.gov JSON API
+            const memberInfo = member['member-info'] || member;
+            
+            const firstname = (memberInfo.firstname || member.firstname || '').toLowerCase();
+            const lastname = (memberInfo.lastname || member.lastname || '').toLowerCase();
+            const party = (memberInfo.party || member.party || '').toLowerCase();
+            const state = (memberInfo.state ? (memberInfo.state['postal-code'] || memberInfo.state) : member.state || '').toLowerCase();
+            const district = (memberInfo.district || member.district || '').toLowerCase();
+            const listingName = (member.listing_name || member['housegov-display-name'] || member.namelist || '').toLowerCase();
+            const bioguideID = (memberInfo.bioguideID || member.bioguide_id || '').toLowerCase();
 
             return firstname.includes(searchTerm) ||
                    lastname.includes(searchTerm) ||
@@ -126,23 +123,27 @@ function performSearch(searchTerm) {
                    state.includes(searchTerm) ||
                    district.includes(searchTerm) ||
                    listingName.includes(searchTerm) ||
-                   officeID.includes(searchTerm) ||
                    bioguideID.includes(searchTerm);
         });
 
         filteredMembers.forEach(member => {
-            const firstname = capitalizeWords(member.firstname || '');
-            const lastname = capitalizeWords(member.lastname || '');
-            const party = capitalizeWords(member.party || '');
-            const state = capitalizeWords(member.state || '');
-            const district = capitalizeWords(member.district || '');
-            const officeID = member.office_id || '';
-            const website = member.websiteURL || member.website_url || '';
-            const bioguideID = member.bioguide_id || '';
-            const officeAuditID = member.office_audit_id || '';
-            const photoURL = member.photoURL || member.photo_url || '';
+            // Handle nested member-info structure from House.gov JSON API
+            const memberInfo = member['member-info'] || member;
+            
+            const firstname = capitalizeWords(memberInfo.firstname || member.firstname || '');
+            const lastname = capitalizeWords(memberInfo.lastname || member.lastname || '');
+            const party = capitalizeWords(memberInfo.party || member.party || '');
+            const state = capitalizeWords(memberInfo.state ? (memberInfo.state['postal-code'] || memberInfo.state) : member.state || '');
+            const district = capitalizeWords(memberInfo.district || member.district || '');
+            const bioguideID = memberInfo.bioguideID || member.bioguide_id || '';
+            const phone = memberInfo.phone || member.phone || '';
+            const office = (memberInfo['office-building'] && memberInfo['office-room']) ?
+                          `${memberInfo['office-building']} ${memberInfo['office-room']}` :
+                          (member.office || '');
+            const website = member.website || member.websiteURL || member.website_url || '';
 
-            const fullName = `${firstname} ${lastname}`.trim();
+            const fullName = `${firstname} ${lastname}`.trim() || member['housegov-display-name'] || member.namelist || 'Unknown Member';
+            const stateDistrict = district ? `${state}-${district}` : state;
 
             // Extract committee information
             let committees = [];
