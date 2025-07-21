@@ -1,48 +1,133 @@
 document.addEventListener('DOMContentLoaded', () => {
-    chrome.storage.local.get('theme', (result) => {
-        if (result.theme) {
-            document.documentElement.setAttribute('data-theme', result.theme);
-        }
-    });
-    
-    // Check if we have data, if not show loading message and trigger fetch
-    chrome.storage.local.get('membersJSON', (result) => {
-        if (!result.membersJSON) {
-            document.getElementById('results').innerHTML = '<div class="loading">Loading member data... This may take a moment on first run.</div>';
-            // Trigger background fetch
-            chrome.runtime.sendMessage({ action: 'refreshData' }, (response) => {
-                // Reload the search after data is fetched
-                setTimeout(() => {
-                    restoreLastSearch();
-                }, 1000);
-            });
-        }
-    });
-    
-    restoreLastSearch();
+    // Check if chrome APIs are available (extension context vs standalone testing)
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.local.get('theme', (result) => {
+            if (result.theme) {
+                document.documentElement.setAttribute('data-theme', result.theme);
+            }
+        });
+        
+        // Check if we have data, if not show loading message and trigger fetch
+        chrome.storage.local.get('membersJSON', (result) => {
+            if (!result.membersJSON) {
+                document.getElementById('results').innerHTML = '<div class="loading">Loading member data... This may take a moment on first run.</div>';
+                // Trigger background fetch
+                chrome.runtime.sendMessage({ action: 'refreshData' }, (response) => {
+                    // Reload the search after data is fetched
+                    setTimeout(() => {
+                        restoreLastSearch();
+                    }, 1000);
+                });
+            }
+        });
+        
+        restoreLastSearch();
+    } else {
+        // Standalone testing mode - show demo data
+        document.getElementById('results').innerHTML = `
+            <div class="wrapper">
+                <div class="result">
+                    <div class="details">
+                        <div class="name-container">
+                            <div class="name-row">
+                                <div class="name">
+                                    <strong>Adam Smith (D)</strong>
+                                </div>
+                                <span class="copy-icon"><i class="fas fa-copy icon" data-text="Adam Smith" data-id="Name"></i></span>
+                            </div>
+                            <div class="state-district">WA-09</div>
+                        </div>
+                        <div class="office-details">
+                            <div class="bioguide">
+                                <span class="label">Bioguide ID:</span>
+                                <span class="info">S000510</span>
+                                <span class="copy-icon"><i class="fas fa-copy icon" data-text="S000510" data-id="Bioguide ID"></i></span>
+                            </div>
+                            <div class="committees-section">
+                                <button class="committees-toggle" aria-expanded="false">
+                                    <i class="fas fa-chevron-down"></i> Committees (2)
+                                </button>
+                                <div class="committees-content" hidden>
+                                    <div class="committee-item">
+                                        <strong>Committee on Armed Services</strong>
+                                        <div class="committee-title">Ranking Member</div>
+                                        <div class="committee-rank">Rank: 1</div>
+                                    </div>
+                                    <div class="committee-item">
+                                        <strong>Subcommittee on Strategic Forces</strong>
+                                        <div class="committee-title">Member</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        
+        // Add event listeners for the demo data
+        setupEventListeners();
+    }
 });
 
 document.getElementById('searchField').addEventListener('input', () => {
     const searchTerm = document.getElementById('searchField').value.toLowerCase();
     performSearch(searchTerm);
-    // Save search term to storage with timestamp
-    chrome.storage.local.set({
-        lastSearch: {
-            term: searchTerm,
-            timestamp: Date.now()
-        }
-    });
+    // Save search term to storage with timestamp (only in extension context)
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.local.set({
+            lastSearch: {
+                term: searchTerm,
+                timestamp: Date.now()
+            }
+        });
+    }
 });
 
 // Add clear button event listener
 document.getElementById('clearButton').addEventListener('click', () => {
     document.getElementById('searchField').value = '';
     document.getElementById('results').innerHTML = '';
-    chrome.storage.local.remove('lastSearch');
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.local.remove('lastSearch');
+    }
 });
+// Function to setup event listeners (for standalone testing)
+function setupEventListeners() {
+    // Add event listeners for committee toggles
+    document.querySelectorAll('.committees-toggle').forEach(toggle => {
+        toggle.addEventListener('click', (event) => {
+            const button = event.currentTarget;
+            const content = button.nextElementSibling;
+            const isExpanded = button.getAttribute('aria-expanded') === 'true';
+            
+            // Toggle aria-expanded
+            button.setAttribute('aria-expanded', !isExpanded);
+            // Toggle hidden attribute
+            content.hidden = isExpanded;
+            
+            // Rotate chevron icon
+            const icon = button.querySelector('i');
+            icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+        });
+    });
+
+    // Add event listeners for copy icons
+    document.querySelectorAll('.icon').forEach(icon => {
+        icon.addEventListener('click', (event) => {
+            const text = event.currentTarget.getAttribute('data-text');
+            const id = event.currentTarget.getAttribute('data-id');
+            console.log(`Copy ${id}: ${text}`);
+        });
+    });
+}
+
 
 // Function to check and restore last search
 function restoreLastSearch() {
+    if (typeof chrome === 'undefined' || !chrome.storage) {
+        return; // Skip in standalone mode
+    }
+    
     chrome.storage.local.get('lastSearch', result => {
         if (result.lastSearch) {
             const { term, timestamp } = result.lastSearch;
@@ -57,10 +142,16 @@ function restoreLastSearch() {
             }
         }
     });
-} 
+}
 
 // Extract search functionality into separate function
 function performSearch(searchTerm) {
+    if (typeof chrome === 'undefined' || !chrome.storage) {
+        // In standalone mode, just show message that this requires extension context
+        document.getElementById('results').innerHTML = '<div class="loading">Search functionality requires Chrome extension context. Use demo data above.</div>';
+        return;
+    }
+    
     chrome.storage.local.get('membersJSON', result => {
         if (!result.membersJSON) {
             document.getElementById('results').innerHTML = '<div class="error">No member data available yet. Please wait while we load the latest data from House.gov...</div>';
