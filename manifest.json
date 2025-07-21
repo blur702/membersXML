@@ -4,7 +4,10 @@
   "version": "2.0",
   "description": "Search and view information about US House of Representatives members",
   "permissions": ["storage", "alarms"],
-  "host_permissions": ["https://housegovfeeds.house.gov/*"],
+  "host_permissions": [
+    "https://housegovfeeds.house.gov/*",
+    "https://member-info.house.gov/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

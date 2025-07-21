@@ -1,4 +1,5 @@
 const JSON_URL = 'https://housegovfeeds.house.gov/feeds/Member/Json';
+const XML_URL = 'https://member-info.house.gov/members.xml';
 
 chrome.runtime.onInstalled.addListener(() => {
     console.log('Extension installed, fetching initial data...');
@@ -49,6 +50,8 @@ function checkAndUpdateData() {
 
 function fetchMembersData() {
     console.log('Fetching members data from:', JSON_URL);
+    
+    // Try JSON API first
     return fetch(JSON_URL)
         .then(response => {
             if (!response.ok) {
@@ -57,23 +60,74 @@ function fetchMembersData() {
             return response.json();
         })
         .then(data => {
-            console.log('Successfully fetched data, storing...');
+            console.log('Successfully fetched JSON data, storing...');
             // Store the fetched data
             return new Promise((resolve) => {
-                chrome.storage.local.set({ 
+                chrome.storage.local.set({
                     membersJSON: data,
                     lastUpdated: new Date().toISOString()
                 }, () => {
-                    console.log('Members data updated and saved successfully');
+                    console.log('Members JSON data updated and saved successfully');
                     resolve();
                 });
             });
         })
         .catch(error => {
-            console.error('Error fetching members data:', error);
-            // Re-throw to allow caller to handle
-            throw error;
+            console.log('JSON API failed, trying XML fallback:', error.message);
+            
+            // Fallback to XML API
+            console.log('Fetching members data from XML:', XML_URL);
+            return fetch(XML_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(xmlText => {
+                    console.log('Successfully fetched XML data, parsing...');
+                    // Parse XML and convert to JSON format
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                    const members = xmlDoc.getElementsByTagName('member');
+                    
+                    const jsonData = {
+                        MemberData: {
+                            Members: Array.from(members).map(member => ({
+                                Name: getXMLElementText(member, 'full-name'),
+                                FirstName: getXMLElementText(member, 'firstname'),
+                                LastName: getXMLElementText(member, 'lastname'),
+                                District: getXMLElementText(member, 'state') + '-' + getXMLElementText(member, 'district'),
+                                Party: getXMLElementText(member, 'party'),
+                                State: getXMLElementText(member, 'state'),
+                                BioGuideID: getXMLElementText(member, 'bioguide-id'),
+                                Phone: getXMLElementText(member, 'phone'),
+                                Office: getXMLElementText(member, 'office-building') + ' ' + getXMLElementText(member, 'office-room')
+                            }))
+                        }
+                    };
+                    
+                    // Store the converted data
+                    return new Promise((resolve) => {
+                        chrome.storage.local.set({
+                            membersJSON: jsonData,
+                            lastUpdated: new Date().toISOString()
+                        }, () => {
+                            console.log('Members XML data converted and saved successfully');
+                            resolve();
+                        });
+                    });
+                })
+                .catch(xmlError => {
+                    console.error('Both JSON and XML APIs failed:', xmlError);
+                    throw xmlError;
+                });
         });
+}
+
+function getXMLElementText(parent, tagName) {
+    const element = parent.getElementsByTagName(tagName)[0];
+    return element ? element.textContent : '';
 }
 
 function isDataStale(lastUpdated) {
