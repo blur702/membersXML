@@ -162,12 +162,6 @@ function performSearch(searchTerm) {
                           `${memberInfo['office-building']} ${memberInfo['office-room']}` :
                           (member.office || '');
             const website = member.website || member.websiteURL || member.website_url || '';
-            
-            // Extract photo URL from JSON API if available
-            const photoUrl = memberInfo.photo || member.photo ||
-                           memberInfo.image || member.image ||
-                           memberInfo['photo-url'] || member['photo-url'] ||
-                           memberInfo.portrait || member.portrait || '';
 
             const fullName = `${firstname} ${lastname}`.trim() || member['housegov-display-name'] || member.namelist || 'Unknown Member';
             const stateDistrict = district ? `${state}-${district}` : state;
@@ -213,18 +207,9 @@ function performSearch(searchTerm) {
                     </div>
                 </div>`;
 
-            // Use API photo URL if available, otherwise construct using BioGuide ID
-            const finalPhotoUrl = photoUrl || (bioguideID ? `https://bioguide.congress.gov/photos/${bioguideID}.jpg` : '');
-            
             results += `
 <div class="wrapper">
   <div class="result">
-    ${finalPhotoUrl ? `<div class="photo-container">
-      <img src="${finalPhotoUrl}" alt="${fullName}" class="member-photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-      <div class="photo-placeholder" style="display:none;">
-        <i class="fas fa-user"></i>
-      </div>
-    </div>` : ''}
     <div class="details">
       <div class="name-container">
         <div class="name-row">
