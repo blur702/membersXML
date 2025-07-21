@@ -288,26 +288,26 @@ function performSearch(searchTerm) {
             // for demonstration. In production, this would fetch from Congress.gov API.
             const committees = getSampleCommitteeData(bioguideID, fullName);
 
-            // Format committee information as dropdown
-            let committeesHTML = '';
-            if (committees.length > 0) {
-                committeesHTML = `
-                    <div class="committees-section">
-                        <label class="committees-label">Committees (${committees.length}):</label>
-                        <select class="committees-dropdown">
-                            <option value="">Select a committee...</option>
-                            ${committees.map((committee, index) => {
-                                const position = `${committee.title}${committee.rank ? `, Rank: ${committee.rank}` : ''}`;
-                                return `<option value="${index}">${committee.name} → ${position}</option>`;
-                            }).join('')}
-                        </select>
-                    </div>`;
-            } else {
-                committeesHTML = `
-                    <div class="committees-section">
-                        <div class="no-committees">No committee assignments found</div>
-                    </div>`;
-            }
+            // Format committee information as accordion with left/right layout
+            let committeesHTML = `
+                <div class="committees-section">
+                    <button class="committees-toggle" aria-expanded="false">
+                        <i class="fas fa-chevron-down"></i> Committees ${committees.length ? `(${committees.length})` : ''}
+                    </button>
+                    <div class="committees-content" hidden>
+                        ${committees.length ?
+                            committees.map(committee => `
+                                <div class="committee-item">
+                                    <div class="committee-row">
+                                        <div class="committee-name">${committee.name}</div>
+                                        <div class="committee-position">${committee.title}${committee.rank ? `, Rank: ${committee.rank}` : ''}</div>
+                                    </div>
+                                </div>
+                            `).join('') :
+                            '<div class="committee-item">No committee assignments found</div>'
+                        }
+                    </div>
+                </div>`;
 
             results += `
 <div class="wrapper">
@@ -349,6 +349,28 @@ function performSearch(searchTerm) {
         });
         
         document.getElementById('results').innerHTML = results || '<div class="no-results">No members found matching your search.</div>';
+        
+        // Add click event listeners for committee toggles
+        setTimeout(() => {
+            document.querySelectorAll('.committees-toggle').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const content = this.nextElementSibling;
+                    const chevron = this.querySelector('i');
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    
+                    if (isExpanded) {
+                        content.hidden = true;
+                        this.setAttribute('aria-expanded', 'false');
+                        chevron.style.transform = 'rotate(0deg)';
+                    } else {
+                        content.hidden = false;
+                        this.setAttribute('aria-expanded', 'true');
+                        chevron.style.transform = 'rotate(180deg)';
+                    }
+                });
+            });
+        }, 100);
 
         // Add event listeners for copy icons
         document.querySelectorAll('.icon').forEach(icon => {
