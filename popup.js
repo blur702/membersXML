@@ -207,9 +207,18 @@ function performSearch(searchTerm) {
                     </div>
                 </div>`;
 
+            // Construct photo URL using BioGuide ID
+            const photoUrl = bioguideID ? `https://bioguide.congress.gov/photos/${bioguideID}.jpg` : '';
+            
             results += `
 <div class="wrapper">
   <div class="result">
+    ${bioguideID ? `<div class="photo-container">
+      <img src="${photoUrl}" alt="${fullName}" class="member-photo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <div class="photo-placeholder" style="display:none;">
+        <i class="fas fa-user"></i>
+      </div>
+    </div>` : ''}
     <div class="details">
       <div class="name-container">
         <div class="name-row">
