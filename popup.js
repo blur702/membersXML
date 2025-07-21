@@ -81,8 +81,20 @@ function performSearch(searchTerm) {
             members = data;
         } else {
             console.error('Unexpected JSON structure:', data);
-            document.getElementById('results').innerHTML = '<div class="error">Unable to parse member data format.</div>';
-            return;
+            console.log('Available keys:', Object.keys(data));
+            console.log('Full data object:', JSON.stringify(data, null, 2));
+            
+            // Check for common House.gov API patterns
+            if (data.MemberData && data.MemberData.Members && Array.isArray(data.MemberData.Members)) {
+                members = data.MemberData.Members;
+            } else if (data.results && Array.isArray(data.results)) {
+                members = data.results;
+            } else if (data.response && Array.isArray(data.response)) {
+                members = data.response;
+            } else {
+                document.getElementById('results').innerHTML = '<div class="error">Unable to parse member data format. Check console for details.</div>';
+                return;
+            }
         }
 
         let results = '';
