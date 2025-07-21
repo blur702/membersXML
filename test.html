@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extension Test</title>
+    <style>
+        .loading { color: blue; }
+        .error { color: red; }
+        .result { border: 1px solid #ccc; margin: 10px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Testing JSON Structure</h1>
+    <div id="results"></div>
+    <script>
+        // Mock chrome API for testing
+        window.chrome = {
+            storage: {
+                local: {
+                    get: function(key, callback) {
+                        // Simulate no data initially
+                        callback({});
+                    }
+                }
+            }
+        };
+
+        // Test JSON fetch
+        fetch('https://housegovfeeds.house.gov/feeds/Member/Json')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('results').innerHTML = `
+                    <h3>JSON Structure Test</h3>
+                    <p>Data type: ${typeof data}</p>
+                    <p>Is array: ${Array.isArray(data)}</p>
+                    <p>Has Members property: ${data.Members ? 'Yes' : 'No'}</p>
+                    <p>Has members property: ${data.members ? 'Yes' : 'No'}</p>
+                    <p>Sample keys: ${Object.keys(data).slice(0, 5).join(', ')}</p>
+                    <h4>First member sample:</h4>
+                    <pre>${JSON.stringify(data.Members ? data.Members[0] : data.members ? data.members[0] : data[0], null, 2)}</pre>
+                `;
+            })
+            .catch(error => {
+                document.getElementById('results').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            });
+    </script>
+</body>
+</html>

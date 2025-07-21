@@ -1,50 +1,56 @@
-const XML_URL = 'https://member-info.house.gov/members.xml';
+const JSON_URL = 'https://housegovfeeds.house.gov/feeds/Member/Json';
 
 chrome.runtime.onInstalled.addListener(() => {
-    checkForUpdates(true); // Check for updates on install
-    chrome.alarms.create('checkForUpdates', { periodInMinutes: 1440 }); // Check for updates daily
+    // Load initial data on install
+    fetchMembersData();
+    
+    // Set up periodic updates (daily)
+    chrome.alarms.create('updateMembersData', { periodInMinutes: 1440 });
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-    if (alarm.name === 'checkForUpdates') {
-        checkForUpdates(false);
+    if (alarm.name === 'updateMembersData') {
+        fetchMembersData();
     }
 });
 
-function checkForUpdates(initialInstall) {
-    fetch(XML_URL, { method: 'HEAD' })
+function fetchMembersData() {
+    fetch(JSON_URL)
         .then(response => {
-            const lastModified = response.headers.get('last-modified');
-            chrome.storage.local.get('lastModified', result => {
-                if (initialInstall || result.lastModified !== lastModified) {
-                    if (!initialInstall) {
-                        chrome.notifications.create({
-                            type: 'basic',
-                            iconUrl: 'icons/icon128.png',
-                            title: 'Update Available',
-                            message: 'A new version of the members XML file is available. Click to download.',
-                            buttons: [{ title: 'Download' }],
-                            priority: 0
-                        });
-                    }
-                    // Save the new last modified date
-                    chrome.storage.local.set({ lastModified: lastModified });
-                }
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Store the fetched data
+            chrome.storage.local.set({ 
+                membersJSON: data,
+                lastUpdated: new Date().toISOString()
+            }, () => {
+                console.log('Members data updated successfully');
             });
         })
-        .catch(error => console.error('Error checking for updates:', error));
+        .catch(error => {
+            console.error('Error fetching members data:', error);
+            // On error, we'll just use cached data if available
+        });
 }
 
-chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
-    if (buttonIndex === 0) { // User clicked 'Download'
-        fetch(XML_URL)
-            .then(response => response.text())
-            .then(data => {
-                chrome.storage.local.set({ membersXML: data }, () => {
-                    chrome.notifications.clear(notificationId);
-                    console.log('XML file updated and saved.');
-                });
-            })
-            .catch(error => console.error('Error downloading the XML file:', error));
-    }
+// Handle extension startup - ensure we have data
+chrome.runtime.onStartup.addListener(() => {
+    // Check if we have recent data, if not fetch it
+    chrome.storage.local.get(['membersJSON', 'lastUpdated'], (result) => {
+        if (!result.membersJSON || isDataStale(result.lastUpdated)) {
+            fetchMembersData();
+        }
+    });
 });
+
+function isDataStale(lastUpdated) {
+    if (!lastUpdated) return true;
+    const lastUpdate = new Date(lastUpdated);
+    const now = new Date();
+    const hoursSinceUpdate = (now - lastUpdate) / (1000 * 60 * 60);
+    return hoursSinceUpdate > 24; // Consider data stale after 24 hours
+}
