@@ -5,12 +5,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Check if we have data, if not show loading message
+    // Check if we have data, if not show loading message and trigger fetch
     chrome.storage.local.get('membersJSON', (result) => {
         if (!result.membersJSON) {
-            document.getElementById('results').innerHTML = '<div class="loading">Loading member data...</div>';
+            document.getElementById('results').innerHTML = '<div class="loading">Loading member data... This may take a moment on first run.</div>';
             // Trigger background fetch
-            chrome.runtime.sendMessage({ action: 'fetchData' });
+            chrome.runtime.sendMessage({ action: 'refreshData' }, (response) => {
+                // Reload the search after data is fetched
+                setTimeout(() => {
+                    restoreLastSearch();
+                }, 1000);
+            });
         }
     });
     
@@ -58,7 +63,9 @@ function restoreLastSearch() {
 function performSearch(searchTerm) {
     chrome.storage.local.get('membersJSON', result => {
         if (!result.membersJSON) {
-            document.getElementById('results').innerHTML = '<div class="error">No member data available. Please check your internet connection and try again.</div>';
+            document.getElementById('results').innerHTML = '<div class="error">No member data available yet. Please wait while we load the latest data from House.gov...</div>';
+            // Try to trigger data fetch
+            chrome.runtime.sendMessage({ action: 'refreshData' });
             return;
         }
 
