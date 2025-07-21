@@ -116,12 +116,18 @@ function performSearch(searchTerm) {
             const district = (memberInfo.district || member.district || '').toLowerCase();
             const listingName = (member.listing_name || member['housegov-display-name'] || member.namelist || '').toLowerCase();
             const bioguideID = (memberInfo.bioguideID || member.bioguide_id || '').toLowerCase();
+            
+            // Create combined state-district format (SSDD) like "CA-01", "TX-12"
+            const stateDistrict = district ? `${state}-${district.padStart(2, '0')}` : state;
+            const fullName = `${firstname} ${lastname}`.toLowerCase();
 
             return firstname.includes(searchTerm) ||
                    lastname.includes(searchTerm) ||
+                   fullName.includes(searchTerm) ||
                    party.includes(searchTerm) ||
                    state.includes(searchTerm) ||
                    district.includes(searchTerm) ||
+                   stateDistrict.includes(searchTerm) ||
                    listingName.includes(searchTerm) ||
                    bioguideID.includes(searchTerm);
         });
@@ -189,7 +195,6 @@ function performSearch(searchTerm) {
             results += `
 <div class="wrapper">
   <div class="result">
-    <img src="${photoURL}" alt="Photo of ${firstname} ${lastname}">
     <div class="details">
       <div class="name-container">
         <div class="name-row">
@@ -198,28 +203,28 @@ function performSearch(searchTerm) {
           </div>
           <span class="copy-icon">${createCopyIcon(fullName, 'Name')}</span>
         </div>
-        <div class="state-district">${state} - District ${district}</div>
+        <div class="state-district">${stateDistrict}</div>
       </div>
       <div class="office-details">
-        <div class="office-id">
-          <span class="label">Office ID:</span>
-          <span class="info">${officeID.toUpperCase()}</span>
-          <span class="copy-icon">${createCopyIcon(officeID.toUpperCase(), 'Office ID')}</span>
-        </div>
-        <div class="bioguide">
+        ${bioguideID ? `<div class="bioguide">
           <span class="label">Bioguide ID:</span>
           <span class="info">${bioguideID}</span>
           <span class="copy-icon">${createCopyIcon(bioguideID, 'Bioguide ID')}</span>
-        </div>
-        ${officeAuditID ? `<div class="auditid">
-          <span class="label">Office Audit ID:</span>
-          <span class="info">${officeAuditID}</span>
-          <span class="copy-icon">${createCopyIcon(officeAuditID, 'Office Audit ID')}</span>
+        </div>` : ''}
+        ${phone ? `<div class="phone">
+          <span class="label">Phone:</span>
+          <span class="info">${phone}</span>
+          <span class="copy-icon">${createCopyIcon(phone, 'Phone')}</span>
+        </div>` : ''}
+        ${office ? `<div class="office">
+          <span class="label">Office:</span>
+          <span class="info">${office}</span>
+          <span class="copy-icon">${createCopyIcon(office, 'Office')}</span>
         </div>` : ''}
         ${committeesHTML}
-        <div class="links">
+        ${website ? `<div class="links">
           <a class="website" href="${website}" target="_blank">Visit Website</a>
-        </div>
+        </div>` : ''}
       </div>
     </div>
   </div>
