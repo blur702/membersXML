@@ -49,13 +49,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </button>
                                 <div class="committees-content" hidden>
                                     <div class="committee-item">
-                                        <strong>Committee on Armed Services</strong>
-                                        <div class="committee-title">Ranking Member</div>
-                                        <div class="committee-rank">Rank: 1</div>
+                                        <div class="committee-row">
+                                            <div class="committee-name">Committee on Armed Services</div>
+                                            <div class="committee-position">Ranking Member, Rank: 1</div>
+                                        </div>
                                     </div>
                                     <div class="committee-item">
-                                        <strong>Subcommittee on Strategic Forces</strong>
-                                        <div class="committee-title">Member</div>
+                                        <div class="committee-row">
+                                            <div class="committee-name">Subcommittee on Strategic Forces</div>
+                                            <div class="committee-position">Member</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -220,6 +223,7 @@ function performSearch(searchTerm) {
             return committeeMap[bioguideID] || [];
         };
 
+        console.log('Starting member filtering...');
         const filteredMembers = members.filter(member => {
             if (!member) return false;
             
@@ -349,28 +353,42 @@ function performSearch(searchTerm) {
         });
         
         document.getElementById('results').innerHTML = results || '<div class="no-results">No members found matching your search.</div>';
+        console.log('Results HTML set, about to add event listeners...');
         
         // Add click event listeners for committee toggles
         setTimeout(() => {
-            document.querySelectorAll('.committees-toggle').forEach(button => {
+            const toggleButtons = document.querySelectorAll('.committees-toggle');
+            console.log('Found committee toggle buttons:', toggleButtons.length);
+            
+            toggleButtons.forEach((button, index) => {
+                console.log(`Setting up listener for button ${index}:`, button);
                 button.addEventListener('click', function(e) {
+                    console.log('Committee toggle clicked!', this);
                     e.preventDefault();
+                    e.stopPropagation();
+                    
                     const content = this.nextElementSibling;
                     const chevron = this.querySelector('i');
                     const isExpanded = this.getAttribute('aria-expanded') === 'true';
                     
+                    console.log('Content element:', content);
+                    console.log('Chevron element:', chevron);
+                    console.log('Is expanded:', isExpanded);
+                    
                     if (isExpanded) {
                         content.hidden = true;
                         this.setAttribute('aria-expanded', 'false');
-                        chevron.style.transform = 'rotate(0deg)';
+                        if (chevron) chevron.style.transform = 'rotate(0deg)';
+                        console.log('Collapsed accordion');
                     } else {
                         content.hidden = false;
                         this.setAttribute('aria-expanded', 'true');
-                        chevron.style.transform = 'rotate(180deg)';
+                        if (chevron) chevron.style.transform = 'rotate(180deg)';
+                        console.log('Expanded accordion');
                     }
                 });
             });
-        }, 100);
+        }, 200); // Increased timeout slightly
 
         // Add event listeners for copy icons
         document.querySelectorAll('.icon').forEach(icon => {
