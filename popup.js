@@ -117,9 +117,20 @@ function performSearch(searchTerm) {
             const listingName = (member.listing_name || member['housegov-display-name'] || member.namelist || '').toLowerCase();
             const bioguideID = (memberInfo.bioguideID || member.bioguide_id || '').toLowerCase();
             
-            // Create combined state-district formats (SSDD) like "ca-01", "tx-12" and "ca01", "tx12"
-            const stateDistrict = district ? `${state}-${district.padStart(2, '0')}`.toLowerCase() : state;
-            const stateDistrictNoDash = district ? `${state}${district.padStart(2, '0')}`.toLowerCase() : state;
+            // Create combined state-district formats handling both ordinal (1st, 2nd) and numeric (01, 02) formats
+            const stateDistrict = district ? `${state}-${district}`.toLowerCase() : state;
+            const stateDistrictNoDash = district ? `${state}${district}`.toLowerCase() : state;
+            
+            // Also create numeric versions for user searches like "az02" to match "AZ-2nd"
+            let stateDistrictNumeric = '';
+            let stateDistrictNoDashNumeric = '';
+            if (district) {
+                // Convert ordinal to numeric (1st->01, 2nd->02, etc.)
+                const numericDistrict = district.replace(/(\d+)(st|nd|rd|th)/i, '$1').padStart(2, '0');
+                stateDistrictNumeric = `${state}-${numericDistrict}`.toLowerCase();
+                stateDistrictNoDashNumeric = `${state}${numericDistrict}`.toLowerCase();
+            }
+            
             const fullName = `${firstname} ${lastname}`.toLowerCase();
 
             return firstname.includes(searchTerm) ||
@@ -130,6 +141,8 @@ function performSearch(searchTerm) {
                    district.includes(searchTerm) ||
                    stateDistrict.includes(searchTerm) ||
                    stateDistrictNoDash.includes(searchTerm) ||
+                   stateDistrictNumeric.includes(searchTerm) ||
+                   stateDistrictNoDashNumeric.includes(searchTerm) ||
                    listingName.includes(searchTerm) ||
                    bioguideID.includes(searchTerm);
         });
