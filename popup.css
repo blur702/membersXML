@@ -69,3 +69,59 @@
 .copy-icon:hover {
     opacity: 1;
 }
+
+/* Committee Styles */
+.committees-section {
+    margin-top: 15px;
+    width: 100%;
+}
+
+.committees-toggle {
+    width: 100%;
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border: none;
+    border-radius: 4px;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.committees-toggle:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.committees-toggle i {
+    transition: transform 0.3s ease;
+}
+
+.committees-content {
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.committee-item {
+    padding: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.committee-item:last-child {
+    border-bottom: none;
+}
+
+.committee-title {
+    font-size: 0.9em;
+    color: #007bff;
+    margin-top: 4px;
+}
+
+.committee-rank {
+    font-size: 0.8em;
+    color: rgba(0, 0, 0, 0.7);
+    margin-top: 2px;
+}
