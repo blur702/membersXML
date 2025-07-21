@@ -1,3 +1,12 @@
+document.addEventListener('DOMContentLoaded', () => {
+    chrome.storage.local.get('theme', (result) => {
+        if (result.theme) {
+            document.documentElement.setAttribute('data-theme', result.theme);
+        }
+    });
+    restoreLastSearch();
+});
+
 document.getElementById('searchField').addEventListener('input', () => {
     const searchTerm = document.getElementById('searchField').value.toLowerCase();
     performSearch(searchTerm);
@@ -33,7 +42,7 @@ function restoreLastSearch() {
             }
         }
     });
-}
+} 
 
 // Extract search functionality into separate function
 function performSearch(searchTerm) {
@@ -68,6 +77,13 @@ function performSearch(searchTerm) {
                     return str.replace(/\b\w/g, char => char.toUpperCase());
                 };
 
+                // Extract committee information
+                const committees = Array.from(member.getElementsByTagName('Committee')).map(committee => ({
+                    name: committee.getAttribute('name'),
+                    title: committee.getAttribute('title') || '',
+                    rank: committee.getAttribute('rank') || ''
+                }));
+
                 if (
                     firstname.includes(searchTerm) ||
                     lastname.includes(searchTerm) ||
@@ -83,6 +99,27 @@ function performSearch(searchTerm) {
                     suffix.includes(searchTerm)
                 ) {
                     const fullName = `${capitalizeWords(prefix)} ${capitalizeWords(firstname)} ${capitalizeWords(middleName)} ${capitalizeWords(lastname)} ${capitalizeWords(suffix)}`;
+                    
+                    // Format committee information
+                    let committeesHTML = `
+                        <div class="committees-section">
+                            <button class="committees-toggle" aria-expanded="false">
+                                <i class="fas fa-chevron-down"></i> Committees ${committees.length ? `(${committees.length})` : ''}
+                            </button>
+                            <div class="committees-content" hidden>
+                                ${committees.length ? 
+                                    committees.map(committee => `
+                                        <div class="committee-item">
+                                            <strong>${committee.name}</strong>
+                                            ${committee.title ? `<div class="committee-title">${committee.title}</div>` : ''}
+                                            ${committee.rank ? `<div class="committee-rank">Rank: ${committee.rank}</div>` : ''}
+                                        </div>
+                                    `).join('') : 
+                                    '<div class="committee-item">No committee assignments found</div>'
+                                }
+                            </div>
+                        </div>`;
+
                     results += `
 <div class="wrapper">
   <div class="result">
@@ -113,6 +150,7 @@ function performSearch(searchTerm) {
           <span class="info">${officeAuditID}</span>
           <span class="copy-icon">${createCopyIcon(officeAuditID, 'Office Audit ID')}</span>
         </div>
+        ${committeesHTML}
         <div class="links">
           <a class="website" href="${website}" target="_blank">Visit Website</a>
         </div>
@@ -132,12 +170,27 @@ function performSearch(searchTerm) {
                     copyToClipboard(text, id);
                 });
             });
+
+            // Add event listeners for committee toggles
+            document.querySelectorAll('.committees-toggle').forEach(toggle => {
+                toggle.addEventListener('click', (event) => {
+                    const button = event.currentTarget;
+                    const content = button.nextElementSibling;
+                    const isExpanded = button.getAttribute('aria-expanded') === 'true';
+                    
+                    // Toggle aria-expanded
+                    button.setAttribute('aria-expanded', !isExpanded);
+                    // Toggle hidden attribute
+                    content.hidden = isExpanded;
+                    
+                    // Rotate chevron icon
+                    const icon = button.querySelector('i');
+                    icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+                });
+            });
         }
     });
 }
-
-// Call restoreLastSearch when popup opens
-document.addEventListener('DOMContentLoaded', restoreLastSearch);
 
 function copyToClipboard(text, id) {
     navigator.clipboard.writeText(text).then(() => {

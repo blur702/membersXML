@@ -1,9 +1,45 @@
+:root[data-theme="light"] {
+    --bg-color: white;
+    --text-color: black;
+    --result-bg: #0056b3;
+    --accent-color: #007bff;
+    --link-color: #007bff;
+}
+
+:root[data-theme="dark"] {
+    --bg-color: #001f3f;
+    --text-color: white;
+    --result-bg: #0056b3;
+    --accent-color: #ffc107;
+    --link-color: #ffc107;
+}
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+        --bg-color: white;
+        --text-color: black;
+        --result-bg: #0056b3;
+        --accent-color: #007bff;
+        --link-color: #007bff;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg-color: #001f3f;
+        --text-color: white;
+        --result-bg: #0056b3;
+        --accent-color: #ffc107;
+        --link-color: #ffc107;
+    }
+}
+
 body {
     width: 500px;
     padding: 10px;
     font-family: Arial, sans-serif;
-    background-color: #001f3f;
-    color: white;
+    background-color: var(--bg-color);
+    color: var(--text-color);
 }
 
 input {
@@ -16,7 +52,7 @@ input {
 .result, .wrapper .result {
     display: flex;
     align-items: center;
-    background-color: #0056b3;
+    background-color: var(--result-bg);
     color: white;
     padding: 20px;
     border-radius: 10px;
@@ -70,7 +106,7 @@ input {
 .copy-icon {
     flex: 0;
     margin-left: 10px;
-    color: #ffc107;
+    color: var(--accent-color);
     cursor: pointer;
 }
 
@@ -81,9 +117,9 @@ input {
 
 a.website {
     text-decoration: none;
-    color: #ffc107;
+    color: var(--link-color);
     font-weight: bold;
-    background-color: #007BFF;
+    background-color: var(--accent-color);
     padding: 5px 10px;
     border-radius: 5px;
     text-align: center;
@@ -110,7 +146,7 @@ a.settings-link {
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #007bff;
+    background-color: var(--accent-color);
     color: white;
     padding: 10px;
     border-radius: 5px;
@@ -118,129 +154,126 @@ a.settings-link {
     z-index: 1000;
 }
 
+.theme-selector {
+    margin-bottom: 20px;
+}
+
+.theme-selector select {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--accent-color);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    width: 200px;
+}
+
+.committees-toggle i.fa-chevron-down {
+    display: inline-block;
+    width: 14px;
+    text-align: center;
+}
+
+/* Committee Styles */
+.committees-section {
+    margin-top: 15px;
+    width: 100%;
+}
+
+.committees-toggle {
+    width: 100%;
+    padding: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 4px;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.committees-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.committees-toggle i {
+    transition: transform 0.3s ease;
+}
+
+.committees-content {
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.committee-item {
+    padding: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.committee-item:last-child {
+    border-bottom: none;
+}
+
+.committee-title {
+    font-size: 0.9em;
+    color: var(--accent-color);
+    margin-top: 4px;
+}
+
+.committee-rank {
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 2px;
+}
+
+/* Committee theme-specific styles */
 @media (prefers-color-scheme: light) {
-    body {
-        background-color: white;
-        color: black;
-    }
-    .result, .wrapper .result {
-        border-color: #007bff;
-        background-color: #0056b3;
-    }
-    a, .website {
-        color: #007bff;
-    }
-    .copy-icon {
-        color: #007bff;
-    }
-    .state-district {
-        color: #0056b3;
+    :root:not([data-theme="dark"]) {
+        .committees-toggle {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .committees-toggle:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        .committees-content {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+        
+        .committee-item {
+            border-bottom-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        .committee-rank {
+            color: rgba(0, 0, 0, 0.6);
+        }
     }
 }
 
 @media (prefers-color-scheme: dark) {
-    body {
-        background-color: #001f3f;
-        color: white;
+    :root:not([data-theme="light"]) {
+        .committees-toggle {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .committees-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .committees-content {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        .committee-item {
+            border-bottom-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .committee-rank {
+            color: rgba(255, 255, 255, 0.7);
+        }
     }
-    .result, .wrapper .result {
-        border-color: #007bff;
-        background-color: #0056b3;
-    }
-    a, .website {
-        color: #ffc107;
-    }
-    .copy-icon {
-        color: #ffc107;
-    }
-    .state-district {
-        color: #ffc107;
-    }
-}
-
-.search-container {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    gap: 8px;
-}
-
-input#searchField {
-    margin-bottom: 0;  /* Remove the existing margin since it's handled by search-container */
-}
-
-.clear-button {
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    background-color: #f0f0f0;
-    cursor: pointer;
-    white-space: nowrap;
-    color: #333;
-}
-
-.clear-button:hover {
-    background-color: #e0e0e0;
-}
-
-.xml-diff-notification {
-    background-color: #007bff;
-    color: white;
-    padding: 10px;
-    border-radius: 4px;
-    margin-bottom: 10px;
-}
-
-.xml-diff-notification a {
-    color: white;
-    text-decoration: underline;
-    font-weight: bold;
-}
-
-.diff-container {
-    padding: 10px;
-}
-
-.diff-added {
-    background-color: rgba(40, 167, 69, 0.2);
-    padding: 8px;
-    margin: 4px 0;
-    border-left: 4px solid #28a745;
-}
-
-.diff-removed {
-    background-color: rgba(220, 53, 69, 0.2);
-    padding: 8px;
-    margin: 4px 0;
-    border-left: 4px solid #dc3545;
-}
-
-.diff-modified {
-    background-color: rgba(255, 193, 7, 0.2);
-    padding: 8px;
-    margin: 4px 0;
-    border-left: 4px solid #ffc107;
-}
-
-.name-container {
-    width: 100%;
-    margin-bottom: 15px;
-}
-
-.name-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5px;
-}
-
-.name {
-    font-weight: bold;
-    font-size: 1.25em;
-    margin-right: 10px;
-}
-
-.state-district {
-    color: #ffc107;
-    font-size: 0.9em;
 }

@@ -1,15 +1,40 @@
-document.getElementById('updateButton').addEventListener('click', () => {
-    const url = 'https://member-info.house.gov/members.xml';
-    fetch(url)
-        .then(response => response.text())
-        .then(data => {
-            // Save the downloaded XML data to local storage
-            chrome.storage.local.set({ membersXML: data }, () => {
-                document.getElementById('status').innerText = 'XML file updated successfully!';
-            });
-        })
-        .catch(error => {
-            document.getElementById('status').innerText = 'Failed to update XML file.';
-            console.error('Error fetching the XML file:', error);
+document.addEventListener('DOMContentLoaded', () => {
+    // Load existing settings
+    chrome.storage.local.get(['xmlSource', 'theme'], (result) => {
+        if (result.xmlSource) {
+            document.getElementById('xmlSource').value = result.xmlSource;
+        }
+        if (result.theme) {
+            document.getElementById('themeSelect').value = result.theme;
+        }
+    });
+
+    // Save XML source
+    document.getElementById('saveButton').addEventListener('click', () => {
+        const xmlSource = document.getElementById('xmlSource').value;
+        chrome.storage.local.set({ xmlSource }, () => {
+            showStatus('Settings saved');
         });
+    });
+
+    // Save theme selection
+    document.getElementById('themeSelect').addEventListener('change', (e) => {
+        const theme = e.target.value;
+        chrome.storage.local.set({ theme }, () => {
+            showStatus('Theme saved');
+            applyTheme(theme);
+        });
+    });
 });
+
+function showStatus(message) {
+    const status = document.getElementById('status');
+    status.textContent = message;
+    setTimeout(() => {
+        status.textContent = '';
+    }, 2000);
+}
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+}
