@@ -117,9 +117,9 @@ function performSearch(searchTerm) {
             const listingName = (member.listing_name || member['housegov-display-name'] || member.namelist || '').toLowerCase();
             const bioguideID = (memberInfo.bioguideID || member.bioguide_id || '').toLowerCase();
             
-            // Create combined state-district formats (SSDD) like "CA-01", "TX-12" and "CA01", "TX12"
-            const stateDistrict = district ? `${state}-${district.padStart(2, '0')}` : state;
-            const stateDistrictNoDash = district ? `${state}${district.padStart(2, '0')}` : state;
+            // Create combined state-district formats (SSDD) like "ca-01", "tx-12" and "ca01", "tx12"
+            const stateDistrict = district ? `${state}-${district.padStart(2, '0')}`.toLowerCase() : state;
+            const stateDistrictNoDash = district ? `${state}${district.padStart(2, '0')}`.toLowerCase() : state;
             const fullName = `${firstname} ${lastname}`.toLowerCase();
 
             return firstname.includes(searchTerm) ||
