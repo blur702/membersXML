@@ -288,25 +288,26 @@ function performSearch(searchTerm) {
             // for demonstration. In production, this would fetch from Congress.gov API.
             const committees = getSampleCommitteeData(bioguideID, fullName);
 
-            // Format committee information
-            let committeesHTML = `
-                <div class="committees-section">
-                    <button class="committees-toggle" aria-expanded="false">
-                        <i class="fas fa-chevron-down"></i> Committees ${committees.length ? `(${committees.length})` : ''}
-                    </button>
-                    <div class="committees-content" hidden>
-                        ${committees.length ? 
-                            committees.map(committee => `
-                                <div class="committee-item">
-                                    <strong>${committee.name}</strong>
-                                    ${committee.title ? `<div class="committee-title">${committee.title}</div>` : ''}
-                                    ${committee.rank ? `<div class="committee-rank">Rank: ${committee.rank}</div>` : ''}
-                                </div>
-                            `).join('') : 
-                            '<div class="committee-item">No committee assignments found</div>'
-                        }
-                    </div>
-                </div>`;
+            // Format committee information as dropdown
+            let committeesHTML = '';
+            if (committees.length > 0) {
+                committeesHTML = `
+                    <div class="committees-section">
+                        <label class="committees-label">Committees (${committees.length}):</label>
+                        <select class="committees-dropdown">
+                            <option value="">Select a committee...</option>
+                            ${committees.map((committee, index) => {
+                                const position = `${committee.title}${committee.rank ? `, Rank: ${committee.rank}` : ''}`;
+                                return `<option value="${index}">${committee.name} → ${position}</option>`;
+                            }).join('')}
+                        </select>
+                    </div>`;
+            } else {
+                committeesHTML = `
+                    <div class="committees-section">
+                        <div class="no-committees">No committee assignments found</div>
+                    </div>`;
+            }
 
             results += `
 <div class="wrapper">

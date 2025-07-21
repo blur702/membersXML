@@ -167,11 +167,6 @@ a.settings-link {
     width: 200px;
 }
 
-.committees-toggle i.fa-chevron-down {
-    display: inline-block;
-    width: 14px;
-    text-align: center;
-}
 
 /* Committee Styles */
 .committees-section {
@@ -179,101 +174,123 @@ a.settings-link {
     width: 100%;
 }
 
-.committees-toggle {
-    width: 100%;
-    padding: 8px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 4px;
+.committees-label {
+    display: block;
+    font-size: 0.9em;
+    font-weight: 500;
     color: inherit;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9em;
+    margin-bottom: 6px;
 }
 
-.committees-toggle:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-.committees-toggle i {
-    transition: transform 0.3s ease;
-}
-
-.committees-content {
-    padding: 10px;
-    background-color: rgba(0, 0, 0, 0.1);
+.committees-dropdown {
+    width: 100%;
+    padding: 8px 12px;
+    background-color: var(--bg-color);
+    border: 1px solid var(--accent-color);
     border-radius: 4px;
-    margin-top: 8px;
-}
-
-.committee-item {
-    padding: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.committee-item:last-child {
-    border-bottom: none;
-}
-
-.committee-title {
+    color: var(--text-color);
     font-size: 0.9em;
-    color: var(--accent-color);
-    margin-top: 4px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.committee-rank {
-    font-size: 0.8em;
-    color: rgba(255, 255, 255, 0.7);
-    margin-top: 2px;
+.committees-dropdown:hover {
+    border-color: var(--primary-color);
+}
+
+.committees-dropdown:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
+}
+
+.committees-dropdown option {
+    padding: 8px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.committees-dropdown option[value=""] {
+    color: var(--muted-text-color);
+    font-style: italic;
+}
+
+.no-committees {
+    padding: 12px;
+    text-align: center;
+    color: var(--muted-text-color);
+    font-style: italic;
+    background-color: rgba(var(--accent-color-rgb), 0.1);
+    border: 1px solid var(--accent-color);
+    border-radius: 4px;
+    font-size: 0.9em;
 }
 
 /* Committee theme-specific styles */
 @media (prefers-color-scheme: light) {
     :root:not([data-theme="dark"]) {
-        .committees-toggle {
-            background-color: rgba(0, 0, 0, 0.05);
+        .committees-dropdown {
+            background-color: #ffffff;
+            border-color: #d1d5db;
+            color: #374151;
         }
         
-        .committees-toggle:hover {
-            background-color: rgba(0, 0, 0, 0.1);
+        .committees-dropdown:hover {
+            border-color: #9ca3af;
         }
         
-        .committees-content {
-            background-color: rgba(0, 0, 0, 0.03);
+        .committees-dropdown:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
         
-        .committee-item {
-            border-bottom-color: rgba(0, 0, 0, 0.1);
+        .committees-dropdown option {
+            background-color: #ffffff;
+            color: #374151;
         }
         
-        .committee-rank {
-            color: rgba(0, 0, 0, 0.6);
+        .committees-dropdown option[value=""] {
+            color: #9ca3af;
+        }
+        
+        .no-committees {
+            background-color: rgba(229, 231, 235, 0.5);
+            border-color: #d1d5db;
+            color: #6b7280;
         }
     }
 }
 
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-        .committees-toggle {
-            background-color: rgba(255, 255, 255, 0.1);
+        .committees-dropdown {
+            background-color: #1f2937;
+            border-color: #4b5563;
+            color: #f9fafb;
         }
         
-        .committees-toggle:hover {
-            background-color: rgba(255, 255, 255, 0.2);
+        .committees-dropdown:hover {
+            border-color: #6b7280;
         }
         
-        .committees-content {
-            background-color: rgba(0, 0, 0, 0.1);
+        .committees-dropdown:focus {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
         }
         
-        .committee-item {
-            border-bottom-color: rgba(255, 255, 255, 0.1);
+        .committees-dropdown option {
+            background-color: #1f2937;
+            color: #f9fafb;
         }
         
-        .committee-rank {
-            color: rgba(255, 255, 255, 0.7);
+        .committees-dropdown option[value=""] {
+            color: #9ca3af;
+        }
+        
+        .no-committees {
+            background-color: rgba(75, 85, 99, 0.3);
+            border-color: #4b5563;
+            color: #d1d5db;
         }
     }
 }

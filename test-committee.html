@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Committee Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<div class="wrapper">
+  <div class="result">
+    <div class="details">
+      <div class="name-container">
+        <div class="name-row">
+          <div class="name">
+            <strong>Adam Smith (D)</strong>
+          </div>
+        </div>
+        <div class="state-district">WA-09</div>
+      </div>
+      <div class="office-details">
+        <div class="bioguide">
+          <span class="label">Bioguide ID:</span>
+          <span class="info">S000510</span>
+        </div>
+        <div class="committees-section">
+            <button class="committees-toggle" aria-expanded="false">
+                <i class="fas fa-chevron-down"></i> Committees (2)
+            </button>
+            <div class="committees-content" hidden>
+                <div class="committee-item">
+                    <strong>Committee on Armed Services</strong>
+                    <div class="committee-title">Ranking Member</div>
+                    <div class="committee-rank">Rank: 1</div>
+                </div>
+                <div class="committee-item">
+                    <strong>Subcommittee on Strategic Forces</strong>
+                    <div class="committee-title">Member</div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Add event listeners for committee toggles
+document.querySelectorAll('.committees-toggle').forEach(toggle => {
+    toggle.addEventListener('click', (event) => {
+        const button = event.currentTarget;
+        const content = button.nextElementSibling;
+        const isExpanded = button.getAttribute('aria-expanded') === 'true';
+        
+        // Toggle aria-expanded
+        button.setAttribute('aria-expanded', !isExpanded);
+        // Toggle hidden attribute
+        content.hidden = isExpanded;
+        
+        // Rotate chevron icon
+        const icon = button.querySelector('i');
+        icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+    });
+});
+</script>
+</body>
+</html>
