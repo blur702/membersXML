@@ -136,9 +136,13 @@ a.settings-link {
     margin-top: 5px;
 }
 
-.name {
+.name-row strong {
     font-weight: bold;
     font-size: 1.25em;
+}
+
+.name-row .info {
+    flex: none;
 }
 
 .notification {

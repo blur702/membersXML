@@ -122,9 +122,9 @@ function performSearch(searchTerm) {
     <div class="details">
       <div class="name-container">
         <div class="name-row">
-          <div class="name">
+          <span class="info">
             <strong>${fullName} (${party})</strong>
-          </div>
+          </span>
           <span class="copy-icon">${createCopyIcon(fullName, 'Name')}</span>
         </div>
       </div>
