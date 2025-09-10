@@ -117,7 +117,7 @@ input {
 
 a.website {
     text-decoration: none;
-    color: var(--link-color);
+    color: white;
     font-weight: bold;
     background-color: var(--accent-color);
     padding: 5px 10px;

@@ -64,13 +64,13 @@ function performSearch(searchTerm) {
             };
 
             for (let member of members) {
-                const firstname = member.getAttribute('firstname') ? member.getAttribute('firstname').toLowerCase() : '';
-                const lastname = member.getAttribute('lastname') ? member.getAttribute('lastname').toLowerCase() : '';
+                const firstname = member.getAttribute('firstname') ? member.getAttribute('firstname') : '';
+                const lastname = member.getAttribute('lastname') ? member.getAttribute('lastname') : '';
                 const party = member.getAttribute('party') ? member.getAttribute('party').toUpperCase() : '';
                 const state = member.getAttribute('state') ? member.getAttribute('state') : '';
                 const district = member.getAttribute('district') ? member.getAttribute('district') : '';
-                const listingName = member.getAttribute('listing_name') ? member.getAttribute('listing_name').toLowerCase() : '';
-                const officeID = member.getAttribute('office_id') ? member.getAttribute('office_id').toLowerCase() : '';
+                const listingName = member.getAttribute('listing_name') ? member.getAttribute('listing_name') : '';
+                const officeID = member.getAttribute('office_id') ? member.getAttribute('office_id') : '';
                 const website = member.getAttribute('websiteURL') ? member.getAttribute('websiteURL') : '';
                 const bioguideID = member.getAttribute('bioguide_id') ? member.getAttribute('bioguide_id') : '';
                 const officeAuditID = member.getAttribute('office_audit_id') ? member.getAttribute('office_audit_id') : '';
@@ -83,13 +83,13 @@ function performSearch(searchTerm) {
                 const photoURL = member.getAttribute('photoURL') ? member.getAttribute('photoURL') : '';
 
                 if (
-                    firstname.includes(searchTerm) ||
-                    lastname.includes(searchTerm) ||
+                    firstname.toLowerCase().includes(searchTerm) ||
+                    lastname.toLowerCase().includes(searchTerm) ||
                     party.toLowerCase().includes(searchTerm) ||
                     state.toLowerCase().includes(searchTerm) ||
-                    district.includes(searchTerm) ||
-                    listingName.includes(searchTerm) ||
-                    officeID.includes(searchTerm) ||
+                    district.toLowerCase().includes(searchTerm) ||
+                    listingName.toLowerCase().includes(searchTerm) ||
+                    officeID.toLowerCase().includes(searchTerm) ||
                     bioguideID.toLowerCase().includes(searchTerm) ||
                     officeAuditID.toLowerCase().includes(searchTerm) ||
                     prefix.toLowerCase().includes(searchTerm) ||
@@ -127,9 +127,13 @@ function performSearch(searchTerm) {
           </div>
           <span class="copy-icon">${createCopyIcon(fullName, 'Name')}</span>
         </div>
-        <div class="state-district">${stateDistrict}</div>
       </div>
       <div class="office-details">
+        <div class="state-district-row">
+            <span class="label">State & District:</span>
+            <span class="info">${stateDistrict}</span>
+            <span class="copy-icon">${createCopyIcon(stateDistrict, 'State & District')}</span>
+        </div>
         ${bioguideID ? `<div class="bioguide">
           <span class="label">Bioguide ID:</span>
           <span class="info">${bioguideID}</span>
