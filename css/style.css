@@ -52,7 +52,7 @@ input {
 .result, .wrapper .result {
     display: flex;
     align-items: center;
-    background-color: var(--result-bg);
+    background-color: #0056b3;
     color: white;
     padding: 20px;
     border-radius: 10px;
@@ -154,6 +154,18 @@ a.settings-link {
     z-index: 1000;
 }
 
+.loading {
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+}
+
+.error, .no-results {
+    text-align: center;
+    padding: 20px;
+    color: #ff6b6b;
+}
+
 .theme-selector {
     margin-bottom: 20px;
 }
@@ -188,10 +200,8 @@ a.settings-link {
     border-radius: 4px;
     color: inherit;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9em;
+    white-space: nowrap;
+    color: #333;
 }
 
 .committees-toggle:hover {
@@ -230,60 +240,4 @@ a.settings-link {
     color: inherit;
     flex: 1;
     font-size: 0.9em;
-}
-
-.committee-position {
-    font-size: 0.85em;
-    color: var(--accent-color);
-    text-align: right;
-    flex-shrink: 0;
-}
-
-/* Committee theme-specific styles */
-@media (prefers-color-scheme: light) {
-    :root:not([data-theme="dark"]) {
-        .committees-toggle {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-        
-        .committees-toggle:hover {
-            background-color: rgba(0, 0, 0, 0.1);
-        }
-        
-        .committees-content {
-            background-color: rgba(0, 0, 0, 0.03);
-        }
-        
-        .committee-item {
-            border-bottom-color: rgba(0, 0, 0, 0.1);
-        }
-        
-        .committee-position {
-            color: rgba(0, 0, 0, 0.7);
-        }
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-        .committees-toggle {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        .committees-toggle:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        
-        .committees-content {
-            background-color: rgba(0, 0, 0, 0.1);
-        }
-        
-        .committee-item {
-            border-bottom-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        .committee-position {
-            color: rgba(255, 255, 255, 0.7);
-        }
-    }
 }

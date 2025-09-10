@@ -2,28 +2,13 @@ const JSON_URL = 'https://housegovfeeds.house.gov/feeds/Member/Json';
 const XML_URL = 'https://member-info.house.gov/members.xml';
 
 chrome.runtime.onInstalled.addListener(() => {
-    console.log('Extension installed, fetching initial data...');
-    // Load initial data on install
-    fetchMembersData();
-    
-    // Set up periodic updates (daily)
-    chrome.alarms.create('updateMembersData', { periodInMinutes: 1440 });
+    checkForUpdates(true); // Check for updates on install
+    chrome.alarms.create('checkForUpdates', { periodInMinutes: 1440 }); // Check for updates daily
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-    if (alarm.name === 'updateMembersData') {
-        console.log('Daily alarm triggered, checking for data updates...');
-        checkAndUpdateData();
-    }
-});
-
-// Handle messages from popup/options pages
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'refreshData') {
-        fetchMembersData()
-            .then(() => sendResponse({ success: true }))
-            .catch(() => sendResponse({ success: false }));
-        return true; // Keep the message channel open for async response
+    if (alarm.name === 'checkForUpdates') {
+        checkForUpdates(false);
     }
 });
 
@@ -54,91 +39,37 @@ function fetchMembersData() {
     // Try JSON API first
     return fetch(JSON_URL)
         .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Successfully fetched JSON data, storing...');
-            // Store the fetched data
-            return new Promise((resolve) => {
-                chrome.storage.local.set({
-                    membersJSON: data,
-                    lastUpdated: new Date().toISOString()
-                }, () => {
-                    console.log('Members JSON data updated and saved successfully');
-                    resolve();
-                });
+            const lastModified = response.headers.get('last-modified');
+            chrome.storage.local.get('lastModified', result => {
+                if (initialInstall || result.lastModified !== lastModified) {
+                    if (!initialInstall) {
+                        chrome.notifications.create({
+                            type: 'basic',
+                            iconUrl: 'icons/icon128.png',
+                            title: 'Update Available',
+                            message: 'A new version of the members XML file is available. Click to download.',
+                            buttons: [{ title: 'Download' }],
+                            priority: 0
+                        });
+                    }
+                    // Save the new last modified date
+                    chrome.storage.local.set({ lastModified: lastModified });
+                }
             });
         })
-        .catch(error => {
-            console.log('JSON API failed, trying XML fallback:', error.message);
-            
-            // Fallback to XML API
-            console.log('Fetching members data from XML:', XML_URL);
-            return fetch(XML_URL)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.text();
-                })
-                .then(xmlText => {
-                    console.log('Successfully fetched XML data, parsing...');
-                    // Parse XML and convert to JSON format
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-                    const members = xmlDoc.getElementsByTagName('member');
-                    
-                    const jsonData = {
-                        MemberData: {
-                            Members: Array.from(members).map(member => ({
-                                Name: getXMLElementText(member, 'full-name'),
-                                FirstName: getXMLElementText(member, 'firstname'),
-                                LastName: getXMLElementText(member, 'lastname'),
-                                District: getXMLElementText(member, 'state') + '-' + getXMLElementText(member, 'district'),
-                                Party: getXMLElementText(member, 'party'),
-                                State: getXMLElementText(member, 'state'),
-                                BioGuideID: getXMLElementText(member, 'bioguide-id'),
-                                Phone: getXMLElementText(member, 'phone'),
-                                Office: getXMLElementText(member, 'office-building') + ' ' + getXMLElementText(member, 'office-room')
-                            }))
-                        }
-                    };
-                    
-                    // Store the converted data
-                    return new Promise((resolve) => {
-                        chrome.storage.local.set({
-                            membersJSON: jsonData,
-                            lastUpdated: new Date().toISOString()
-                        }, () => {
-                            console.log('Members XML data converted and saved successfully');
-                            resolve();
-                        });
-                    });
-                })
-                .catch(xmlError => {
-                    console.error('Both JSON and XML APIs failed:', xmlError);
-                    throw xmlError;
+        .catch(error => console.error('Error checking for updates:', error));
+}
+
+chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
+    if (buttonIndex === 0) { // User clicked 'Download'
+        fetch(XML_URL)
+            .then(response => response.text())
+            .then(data => {
+                chrome.storage.local.set({ membersXML: data }, () => {
+                    chrome.notifications.clear(notificationId);
+                    console.log('XML file updated and saved.');
                 });
-        });
-}
-
-function getXMLElementText(parent, tagName) {
-    const element = parent.getElementsByTagName(tagName)[0];
-    return element ? element.textContent : '';
-}
-
-function isDataStale(lastUpdated) {
-    if (!lastUpdated) {
-        console.log('No lastUpdated timestamp, data is stale');
-        return true;
+            })
+            .catch(error => console.error('Error downloading the XML file:', error));
     }
-    const lastUpdate = new Date(lastUpdated);
-    const now = new Date();
-    const hoursSinceUpdate = (now - lastUpdate) / (1000 * 60 * 60);
-    const isStale = hoursSinceUpdate > 24; // Consider data stale after 24 hours
-    console.log(`Data age: ${hoursSinceUpdate.toFixed(1)} hours, stale: ${isStale}`);
-    return isStale;
-}
+});

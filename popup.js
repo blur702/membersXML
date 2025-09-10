@@ -1,89 +1,26 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // Check if chrome APIs are available (extension context vs standalone testing)
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-        chrome.storage.local.get('theme', (result) => {
-            if (result.theme) {
-                document.documentElement.setAttribute('data-theme', result.theme);
-            }
-        });
-        
-        // Check if we have data, if not show loading message and trigger fetch
-        chrome.storage.local.get('membersJSON', (result) => {
-            if (!result.membersJSON) {
-                document.getElementById('results').innerHTML = '<div class="loading">Loading member data... This may take a moment on first run.</div>';
-                // Trigger background fetch
-                chrome.runtime.sendMessage({ action: 'refreshData' }, (response) => {
-                    // Reload the search after data is fetched
-                    setTimeout(() => {
-                        restoreLastSearch();
-                    }, 1000);
-                });
-            }
-        });
-        
-        restoreLastSearch();
-    } else {
-        // Standalone testing mode - show demo data
-        document.getElementById('results').innerHTML = `
-            <div class="wrapper">
-                <div class="result">
-                    <div class="details">
-                        <div class="name-container">
-                            <div class="name-row">
-                                <div class="name">
-                                    <strong>Adam Smith (D)</strong>
-                                </div>
-                                <span class="copy-icon"><i class="fas fa-copy icon" data-text="Adam Smith" data-id="Name"></i></span>
-                            </div>
-                            <div class="state-district">WA-09</div>
-                        </div>
-                        <div class="office-details">
-                            <div class="bioguide">
-                                <span class="label">Bioguide ID:</span>
-                                <span class="info">S000510</span>
-                                <span class="copy-icon"><i class="fas fa-copy icon" data-text="S000510" data-id="Bioguide ID"></i></span>
-                            </div>
-                            <div class="committees-section">
-                                <button class="committees-toggle" aria-expanded="false">
-                                    <i class="fas fa-chevron-down"></i> Committees (2)
-                                </button>
-                                <div class="committees-content" hidden>
-                                    <div class="committee-item">
-                                        <div class="committee-row">
-                                            <div class="committee-name">Committee on Armed Services</div>
-                                            <div class="committee-position">Ranking Member, Rank: 1</div>
-                                        </div>
-                                    </div>
-                                    <div class="committee-item">
-                                        <div class="committee-row">
-                                            <div class="committee-name">Subcommittee on Strategic Forces</div>
-                                            <div class="committee-position">Member</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        
-        // Add event listeners for the demo data
-        setupEventListeners();
-    }
-});
-
 document.getElementById('searchField').addEventListener('input', () => {
     const searchTerm = document.getElementById('searchField').value.toLowerCase();
-    performSearch(searchTerm);
-    // Save search term to storage with timestamp (only in extension context)
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-        chrome.storage.local.set({
-            lastSearch: {
-                term: searchTerm,
-                timestamp: Date.now()
+    
+    // Set searching state
+    if (searchInProgress) {
+        // If a search is already in progress, wait and try again
+        setTimeout(() => {
+            const currentSearchTerm = document.getElementById('searchField').value.toLowerCase();
+            if (currentSearchTerm === searchTerm) {
+                performSearch(searchTerm);
             }
-        });
+        }, 100);
+        return;
     }
+    
+    performSearch(searchTerm);
+    // Save search term to storage with timestamp
+    chrome.storage.local.set({
+        lastSearch: {
+            term: searchTerm,
+            timestamp: Date.now()
+        }
+    });
 });
 
 // Add clear button event listener
@@ -149,171 +86,53 @@ function restoreLastSearch() {
 
 // Extract search functionality into separate function
 function performSearch(searchTerm) {
-    if (typeof chrome === 'undefined' || !chrome.storage) {
-        // In standalone mode, just show message that this requires extension context
-        document.getElementById('results').innerHTML = '<div class="loading">Search functionality requires Chrome extension context. Use demo data above.</div>';
-        return;
-    }
-    
-    chrome.storage.local.get('membersJSON', result => {
-        if (!result.membersJSON) {
-            document.getElementById('results').innerHTML = '<div class="error">No member data available yet. Please wait while we load the latest data from House.gov...</div>';
-            // Try to trigger data fetch
-            chrome.runtime.sendMessage({ action: 'refreshData' });
-            return;
-        }
+    chrome.storage.local.get('membersXML', result => {
+        if (result.membersXML) {
+            const parser = new DOMParser();
+            const data = parser.parseFromString(result.membersXML, 'text/xml');
+            const members = data.getElementsByTagName('Member');
+            let results = '';
 
-        const data = result.membersJSON;
-        let members = [];
-        
-        // Handle different possible JSON structures
-        if (data.members && data.members.member && Array.isArray(data.members.member)) {
-            // House.gov JSON API structure: data.members.member[]
-            members = data.members.member;
-        } else if (data.Members && Array.isArray(data.Members)) {
-            members = data.Members;
-        } else if (data.members && Array.isArray(data.members)) {
-            members = data.members;
-        } else if (Array.isArray(data)) {
-            members = data;
-        } else if (data.MemberData && data.MemberData.Members && Array.isArray(data.MemberData.Members)) {
-            // XML converted format
-            members = data.MemberData.Members;
-        } else {
-            console.error('Unexpected JSON structure:', data);
-            console.log('Available keys:', Object.keys(data));
-            document.getElementById('results').innerHTML = '<div class="error">Unable to parse member data format. Check console for details.</div>';
-            return;
-        }
-
-        let results = '';
-
-        const createCopyIcon = (text, id) => {
-            return `<i class="fas fa-copy icon" data-text="${text}" data-id="${id}"></i>`;
-        };
-
-        const capitalizeWords = (str) => {
-            if (!str) return '';
-            return str.replace(/\b\w/g, char => char.toUpperCase());
-        };
-
-        const getSampleCommitteeData = (bioguideID, fullName) => {
-            // Sample committee data for demonstration. In production, this would fetch from
-            // Congress.gov API or another official source using the BioGuide ID.
-            const committeeMap = {
-                'S000510': [ // Adam Smith (WA-09)
-                    { name: 'Committee on Armed Services', title: 'Ranking Member', rank: '1' },
-                    { name: 'Subcommittee on Strategic Forces', title: 'Member', rank: '' }
-                ],
-                'S001172': [ // Adrian Smith (NE-03)
-                    { name: 'Committee on Ways and Means', title: 'Member', rank: '' },
-                    { name: 'Subcommittee on Trade', title: 'Chairman', rank: '1' }
-                ],
-                'S000522': [ // Chris Smith (NJ-04)
-                    { name: 'Committee on Foreign Affairs', title: 'Member', rank: '' },
-                    { name: 'Committee on Veterans\' Affairs', title: 'Member', rank: '' }
-                ],
-                'S001195': [ // Jason Smith (MO-08)
-                    { name: 'Committee on Ways and Means', title: 'Chairman', rank: '1' },
-                    { name: 'Committee on the Budget', title: 'Member', rank: '' }
-                ]
+            const createCopyIcon = (text, id) => {
+                return `<i class="fas fa-copy icon" data-text="${text}" data-id="${id}"></i>`;
             };
 
-            // Return committee data if available, otherwise return empty array
-            return committeeMap[bioguideID] || [];
-        };
+            for (let member of members) {
+                const firstname = member.getAttribute('firstname') ? member.getAttribute('firstname').toLowerCase() : '';
+                const lastname = member.getAttribute('lastname') ? member.getAttribute('lastname').toLowerCase() : '';
+                const party = member.getAttribute('party') ? member.getAttribute('party').toLowerCase() : '';
+                const state = member.getAttribute('state') ? member.getAttribute('state').toLowerCase() : '';
+                const district = member.getAttribute('district') ? member.getAttribute('district').toLowerCase() : '';
+                const listingName = member.getAttribute('listing_name') ? member.getAttribute('listing_name').toLowerCase() : '';
+                const officeID = member.getAttribute('office_id') ? member.getAttribute('office_id').toLowerCase() : ''; // Ensure this is lowercase for search comparison
+                const website = member.getAttribute('websiteURL') ? member.getAttribute('websiteURL') : '';
+                const bioguideID = member.getAttribute('bioguide_id') ? member.getAttribute('bioguide_id') : '';
+                const officeAuditID = member.getAttribute('office_audit_id') ? member.getAttribute('office_audit_id') : '';
+                const prefix = member.getAttribute('prefix') ? member.getAttribute('prefix').toLowerCase() : '';
+                const middleName = member.getAttribute('middle_name') ? member.getAttribute('middle_name').toLowerCase() : '';
+                const suffix = member.getAttribute('suffix') ? member.getAttribute('suffix').toLowerCase() : '';
+                const photoURL = member.getAttribute('photoURL') ? member.getAttribute('photoURL') : '';
 
-        console.log('Starting member filtering...');
-        const filteredMembers = members.filter(member => {
-            if (!member) return false;
-            
-            // Handle nested member-info structure from House.gov JSON API
-            const memberInfo = member['member-info'] || member;
-            
-            const firstname = (memberInfo.firstname || member.firstname || '').toLowerCase();
-            const lastname = (memberInfo.lastname || member.lastname || '').toLowerCase();
-            const party = (memberInfo.party || member.party || '').toLowerCase();
-            const state = (memberInfo.state ? (memberInfo.state['postal-code'] || memberInfo.state) : member.state || '').toLowerCase();
-            const district = (memberInfo.district || member.district || '').toLowerCase();
-            const listingName = (member.listing_name || member['housegov-display-name'] || member.namelist || '').toLowerCase();
-            const bioguideID = (memberInfo.bioguideID || member.bioguide_id || '').toLowerCase();
-            
-            // Create combined state-district formats handling both ordinal (1st, 2nd) and numeric (01, 02) formats
-            const stateDistrict = district ? `${state}-${district}`.toLowerCase() : state;
-            const stateDistrictNoDash = district ? `${state}${district}`.toLowerCase() : state;
-            
-            // Also create numeric versions for user searches like "az02" to match "AZ-2nd"
-            let stateDistrictNumeric = '';
-            let stateDistrictNoDashNumeric = '';
-            if (district) {
-                // Convert ordinal to numeric (1st->01, 2nd->02, etc.)
-                const numericDistrict = district.replace(/(\d+)(st|nd|rd|th)/i, '$1').padStart(2, '0');
-                stateDistrictNumeric = `${state}-${numericDistrict}`.toLowerCase();
-                stateDistrictNoDashNumeric = `${state}${numericDistrict}`.toLowerCase();
-            }
-            
-            const fullName = `${firstname} ${lastname}`.toLowerCase();
+                const capitalizeWords = (str) => {
+                    return str.replace(/\b\w/g, char => char.toUpperCase());
+                };
 
-            return firstname.includes(searchTerm) ||
-                   lastname.includes(searchTerm) ||
-                   fullName.includes(searchTerm) ||
-                   party.includes(searchTerm) ||
-                   state.includes(searchTerm) ||
-                   district.includes(searchTerm) ||
-                   stateDistrict.includes(searchTerm) ||
-                   stateDistrictNoDash.includes(searchTerm) ||
-                   stateDistrictNumeric.includes(searchTerm) ||
-                   stateDistrictNoDashNumeric.includes(searchTerm) ||
-                   listingName.includes(searchTerm) ||
-                   bioguideID.includes(searchTerm);
-        });
-
-        filteredMembers.forEach(member => {
-            // Handle nested member-info structure from House.gov JSON API
-            const memberInfo = member['member-info'] || member;
-            
-            const firstname = capitalizeWords(memberInfo.firstname || member.firstname || '');
-            const lastname = capitalizeWords(memberInfo.lastname || member.lastname || '');
-            const party = capitalizeWords(memberInfo.party || member.party || '');
-            const state = capitalizeWords(memberInfo.state ? (memberInfo.state['postal-code'] || memberInfo.state) : member.state || '');
-            const district = capitalizeWords(memberInfo.district || member.district || '');
-            const bioguideID = memberInfo.bioguideID || member.bioguide_id || '';
-            const phone = memberInfo.phone || member.phone || '';
-            const office = (memberInfo['office-building'] && memberInfo['office-room']) ?
-                          `${memberInfo['office-building']} ${memberInfo['office-room']}` :
-                          (member.office || '');
-            const website = member.website || member.websiteURL || member.website_url || '';
-
-            const fullName = `${firstname} ${lastname}`.trim() || member['housegov-display-name'] || member.namelist || 'Unknown Member';
-            const stateDistrict = district ? `${state}-${district}` : state;
-
-            // Extract committee information
-            // Since House.gov API doesn't include committee data, we'll use sample data
-            // for demonstration. In production, this would fetch from Congress.gov API.
-            const committees = getSampleCommitteeData(bioguideID, fullName);
-
-            // Format committee information as accordion with left/right layout
-            let committeesHTML = `
-                <div class="committees-section">
-                    <button class="committees-toggle" aria-expanded="false">
-                        <i class="fas fa-chevron-down"></i> Committees ${committees.length ? `(${committees.length})` : ''}
-                    </button>
-                    <div class="committees-content" hidden>
-                        ${committees.length ?
-                            committees.map(committee => `
-                                <div class="committee-item">
-                                    <div class="committee-row">
-                                        <div class="committee-name">${committee.name}</div>
-                                        <div class="committee-position">${committee.title}${committee.rank ? `, Rank: ${committee.rank}` : ''}</div>
-                                    </div>
-                                </div>
-                            `).join('') :
-                            '<div class="committee-item">No committee assignments found</div>'
-                        }
-                    </div>
-                </div>`;
-
-            results += `
+                if (
+                    firstname.includes(searchTerm) ||
+                    lastname.includes(searchTerm) ||
+                    party.includes(searchTerm) ||
+                    state.includes(searchTerm) ||
+                    district.includes(searchTerm) ||
+                    listingName.includes(searchTerm) ||
+                    officeID.includes(searchTerm) ||
+                    bioguideID.includes(searchTerm) ||
+                    officeAuditID.includes(searchTerm) ||
+                    prefix.includes(searchTerm) ||
+                    middleName.includes(searchTerm) ||
+                    suffix.includes(searchTerm)
+                ) {
+                    const fullName = `${capitalizeWords(prefix)} ${capitalizeWords(firstname)} ${capitalizeWords(middleName)} ${capitalizeWords(lastname)} ${capitalizeWords(suffix)}`;
+                    results += `
 <div class="wrapper">
   <div class="result">
     <div class="details">
@@ -350,74 +169,24 @@ function performSearch(searchTerm) {
     </div>
   </div>
 </div>`;
-        });
-        
-        document.getElementById('results').innerHTML = results || '<div class="no-results">No members found matching your search.</div>';
-        console.log('Results HTML set, about to add event listeners...');
-        
-        // Add click event listeners for committee toggles
-        setTimeout(() => {
-            const toggleButtons = document.querySelectorAll('.committees-toggle');
-            console.log('Found committee toggle buttons:', toggleButtons.length);
-            
-            toggleButtons.forEach((button, index) => {
-                console.log(`Setting up listener for button ${index}:`, button);
-                button.addEventListener('click', function(e) {
-                    console.log('Committee toggle clicked!', this);
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const content = this.nextElementSibling;
-                    const chevron = this.querySelector('i');
-                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                    
-                    console.log('Content element:', content);
-                    console.log('Chevron element:', chevron);
-                    console.log('Is expanded:', isExpanded);
-                    
-                    if (isExpanded) {
-                        content.hidden = true;
-                        this.setAttribute('aria-expanded', 'false');
-                        if (chevron) chevron.style.transform = 'rotate(0deg)';
-                        console.log('Collapsed accordion');
-                    } else {
-                        content.hidden = false;
-                        this.setAttribute('aria-expanded', 'true');
-                        if (chevron) chevron.style.transform = 'rotate(180deg)';
-                        console.log('Expanded accordion');
-                    }
+                }
+            }
+            document.getElementById('results').innerHTML = results;
+
+            // Add event listeners for copy icons
+            document.querySelectorAll('.icon').forEach(icon => {
+                icon.addEventListener('click', (event) => {
+                    const text = event.currentTarget.getAttribute('data-text');
+                    const id = event.currentTarget.getAttribute('data-id');
+                    copyToClipboard(text, id);
                 });
             });
-        }, 200); // Increased timeout slightly
-
-        // Add event listeners for copy icons
-        document.querySelectorAll('.icon').forEach(icon => {
-            icon.addEventListener('click', (event) => {
-                const text = event.currentTarget.getAttribute('data-text');
-                const id = event.currentTarget.getAttribute('data-id');
-                copyToClipboard(text, id);
-            });
-        });
-
-        // Add event listeners for committee toggles
-        document.querySelectorAll('.committees-toggle').forEach(toggle => {
-            toggle.addEventListener('click', (event) => {
-                const button = event.currentTarget;
-                const content = button.nextElementSibling;
-                const isExpanded = button.getAttribute('aria-expanded') === 'true';
-                
-                // Toggle aria-expanded
-                button.setAttribute('aria-expanded', !isExpanded);
-                // Toggle hidden attribute
-                content.hidden = isExpanded;
-                
-                // Rotate chevron icon
-                const icon = button.querySelector('i');
-                icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
-            });
-        });
+        }
     });
 }
+
+// Call restoreLastSearch when popup opens
+document.addEventListener('DOMContentLoaded', restoreLastSearch);
 
 function copyToClipboard(text, id) {
     navigator.clipboard.writeText(text).then(() => {
@@ -433,4 +202,133 @@ function showNotification(message) {
     setTimeout(() => {
         notification.remove();
     }, 2000);
+}
+
+// Function to compare XML data
+function compareXMLData(oldXML, newXML) {
+    const changes = {
+        added: [],
+        removed: [],
+        modified: []
+    };
+    
+    const oldDoc = new DOMParser().parseFromString(oldXML, 'text/xml');
+    const newDoc = new DOMParser().parseFromString(newXML, 'text/xml');
+    
+    const oldMembers = Array.from(oldDoc.getElementsByTagName('Member'));
+    const newMembers = Array.from(newDoc.getElementsByTagName('Member'));
+    
+    // Create maps for easier comparison
+    const oldMemberMap = new Map(oldMembers.map(m => [m.getAttribute('bioguide_id'), m]));
+    const newMemberMap = new Map(newMembers.map(m => [m.getAttribute('bioguide_id'), m]));
+    
+    // Find added and modified members
+    newMembers.forEach(member => {
+        const bioguideId = member.getAttribute('bioguide_id');
+        const oldMember = oldMemberMap.get(bioguideId);
+        
+        if (!oldMember) {
+            changes.added.push(formatMemberData(member));
+        } else if (membersAreDifferent(oldMember, member)) {
+            changes.modified.push({
+                old: formatMemberData(oldMember),
+                new: formatMemberData(member)
+            });
+        }
+    });
+    
+    // Find removed members
+    oldMembers.forEach(member => {
+        const bioguideId = member.getAttribute('bioguide_id');
+        if (!newMemberMap.has(bioguideId)) {
+            changes.removed.push(formatMemberData(member));
+        }
+    });
+    
+    return changes;
+}
+
+function membersAreDifferent(oldMember, newMember) {
+    const attributes = ['firstname', 'lastname', 'party', 'state', 'district', 'office_id'];
+    return attributes.some(attr => 
+        oldMember.getAttribute(attr) !== newMember.getAttribute(attr)
+    );
+}
+
+function formatMemberData(member) {
+    return {
+        name: `${member.getAttribute('firstname')} ${member.getAttribute('lastname')}`,
+        party: member.getAttribute('party'),
+        state: member.getAttribute('state'),
+        district: member.getAttribute('district'),
+        officeId: member.getAttribute('office_id')
+    };
+}
+
+// Add this to your existing chrome.storage.onChanged listener
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && changes.membersXML) {
+        const oldXML = changes.membersXML.oldValue;
+        const newXML = changes.membersXML.newValue;
+        
+        if (oldXML && newXML) {
+            const xmlDiffs = compareXMLData(oldXML, newXML);
+            if (xmlDiffs.added.length || xmlDiffs.removed.length || xmlDiffs.modified.length) {
+                // Store the diffs for later viewing
+                chrome.storage.local.set({ xmlDiffs: xmlDiffs });
+                showXMLDiffNotification();
+            }
+        }
+    }
+});
+
+function showXMLDiffNotification() {
+    const notification = document.getElementById('xmlDiffNotification');
+    notification.style.display = 'block';
+}
+
+// Add click handler for viewing changes
+document.getElementById('viewChangesLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    chrome.storage.local.get('xmlDiffs', (result) => {
+        if (result.xmlDiffs) {
+            displayXMLDiffs(result.xmlDiffs);
+        }
+    });
+});
+
+function displayXMLDiffs(diffs) {
+    let diffHTML = '<div class="diff-container">';
+    
+    if (diffs.added.length) {
+        diffHTML += '<h3>Added Members:</h3>';
+        diffs.added.forEach(member => {
+            diffHTML += `<div class="diff-added">
+                <p>+ ${member.name} (${member.party}-${member.state}) District ${member.district}</p>
+            </div>`;
+        });
+    }
+    
+    if (diffs.removed.length) {
+        diffHTML += '<h3>Removed Members:</h3>';
+        diffs.removed.forEach(member => {
+            diffHTML += `<div class="diff-removed">
+                <p>- ${member.name} (${member.party}-${member.state}) District ${member.district}</p>
+            </div>`;
+        });
+    }
+    
+    if (diffs.modified.length) {
+        diffHTML += '<h3>Modified Members:</h3>';
+        diffs.modified.forEach(change => {
+            diffHTML += `<div class="diff-modified">
+                <p>From: ${change.old.name} (${change.old.party}-${change.old.state}) District ${change.old.district}</p>
+                <p>To: ${change.new.name} (${change.new.party}-${change.new.state}) District ${change.new.district}</p>
+            </div>`;
+        });
+    }
+    
+    diffHTML += '</div>';
+    
+    document.getElementById('results').innerHTML = diffHTML;
 }
