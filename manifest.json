@@ -3,7 +3,7 @@
   "name": "US House Members Directory",
   "version": "2.0",
   "description": "Search and view information about US House of Representatives members",
-  "permissions": ["storage", "alarms"],
+  "permissions": ["storage", "alarms", "notifications"],
   "host_permissions": [
     "https://housegovfeeds.house.gov/*",
     "https://member-info.house.gov/*"

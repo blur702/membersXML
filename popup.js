@@ -1,9 +1,9 @@
+let searchInProgress = false;
+
 document.getElementById('searchField').addEventListener('input', () => {
     const searchTerm = document.getElementById('searchField').value.toLowerCase();
-    
-    // Set searching state
+
     if (searchInProgress) {
-        // If a search is already in progress, wait and try again
         setTimeout(() => {
             const currentSearchTerm = document.getElementById('searchField').value.toLowerCase();
             if (currentSearchTerm === searchTerm) {
@@ -12,9 +12,8 @@ document.getElementById('searchField').addEventListener('input', () => {
         }, 100);
         return;
     }
-    
+
     performSearch(searchTerm);
-    // Save search term to storage with timestamp
     chrome.storage.local.set({
         lastSearch: {
             term: searchTerm,
@@ -23,7 +22,6 @@ document.getElementById('searchField').addEventListener('input', () => {
     });
 });
 
-// Add clear button event listener
 document.getElementById('clearButton').addEventListener('click', () => {
     document.getElementById('searchField').value = '';
     document.getElementById('results').innerHTML = '';
@@ -31,27 +29,22 @@ document.getElementById('clearButton').addEventListener('click', () => {
         chrome.storage.local.remove('lastSearch');
     }
 });
-// Function to setup event listeners (for standalone testing)
+
 function setupEventListeners() {
-    // Add event listeners for committee toggles
     document.querySelectorAll('.committees-toggle').forEach(toggle => {
         toggle.addEventListener('click', (event) => {
             const button = event.currentTarget;
             const content = button.nextElementSibling;
             const isExpanded = button.getAttribute('aria-expanded') === 'true';
-            
-            // Toggle aria-expanded
+
             button.setAttribute('aria-expanded', !isExpanded);
-            // Toggle hidden attribute
             content.hidden = isExpanded;
-            
-            // Rotate chevron icon
+
             const icon = button.querySelector('i');
             icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
         });
     });
 
-    // Add event listeners for copy icons
     document.querySelectorAll('.icon').forEach(icon => {
         icon.addEventListener('click', (event) => {
             const text = event.currentTarget.getAttribute('data-text');
@@ -61,31 +54,28 @@ function setupEventListeners() {
     });
 }
 
-
-// Function to check and restore last search
 function restoreLastSearch() {
     if (typeof chrome === 'undefined' || !chrome.storage) {
-        return; // Skip in standalone mode
+        return; 
     }
-    
+
     chrome.storage.local.get('lastSearch', result => {
         if (result.lastSearch) {
             const { term, timestamp } = result.lastSearch;
-            const fifteenMinutes = 15 * 60 * 1000; // 15 minutes in milliseconds
-            
+            const fifteenMinutes = 15 * 60 * 1000;
+
             if (Date.now() - timestamp < fifteenMinutes) {
                 document.getElementById('searchField').value = term;
                 performSearch(term);
             } else {
-                // Clear expired search
                 chrome.storage.local.remove('lastSearch');
             }
         }
     });
 }
 
-// Extract search functionality into separate function
 function performSearch(searchTerm) {
+    searchInProgress = true;
     chrome.storage.local.get('membersXML', result => {
         if (result.membersXML) {
             const parser = new DOMParser();
@@ -100,38 +90,49 @@ function performSearch(searchTerm) {
             for (let member of members) {
                 const firstname = member.getAttribute('firstname') ? member.getAttribute('firstname').toLowerCase() : '';
                 const lastname = member.getAttribute('lastname') ? member.getAttribute('lastname').toLowerCase() : '';
-                const party = member.getAttribute('party') ? member.getAttribute('party').toLowerCase() : '';
-                const state = member.getAttribute('state') ? member.getAttribute('state').toLowerCase() : '';
-                const district = member.getAttribute('district') ? member.getAttribute('district').toLowerCase() : '';
+                const party = member.getAttribute('party') ? member.getAttribute('party').toUpperCase() : '';
+                const state = member.getAttribute('state') ? member.getAttribute('state') : '';
+                const district = member.getAttribute('district') ? member.getAttribute('district') : '';
                 const listingName = member.getAttribute('listing_name') ? member.getAttribute('listing_name').toLowerCase() : '';
-                const officeID = member.getAttribute('office_id') ? member.getAttribute('office_id').toLowerCase() : ''; // Ensure this is lowercase for search comparison
+                const officeID = member.getAttribute('office_id') ? member.getAttribute('office_id').toLowerCase() : '';
                 const website = member.getAttribute('websiteURL') ? member.getAttribute('websiteURL') : '';
                 const bioguideID = member.getAttribute('bioguide_id') ? member.getAttribute('bioguide_id') : '';
                 const officeAuditID = member.getAttribute('office_audit_id') ? member.getAttribute('office_audit_id') : '';
-                const prefix = member.getAttribute('prefix') ? member.getAttribute('prefix').toLowerCase() : '';
-                const middleName = member.getAttribute('middle_name') ? member.getAttribute('middle_name').toLowerCase() : '';
-                const suffix = member.getAttribute('suffix') ? member.getAttribute('suffix').toLowerCase() : '';
-                const photoURL = member.getAttribute('photoURL') ? member.getAttribute('photoURL') : '';
-
-                const capitalizeWords = (str) => {
-                    return str.replace(/\b\w/g, char => char.toUpperCase());
-                };
+                const prefix = member.getAttribute('prefix') ? member.getAttribute('prefix') : '';
+                const middleName = member.getAttribute('middle_name') ? member.getAttribute('middle_name') : '';
+                const suffix = member.getAttribute('suffix') ? member.getAttribute('suffix') : '';
+                const phone = member.getAttribute('phone') ? member.getAttribute('phone') : '';
+                const roomNum = member.getAttribute('room_num') ? member.getAttribute('room_num') : '';
+                const hob = member.getAttribute('HOB') ? member.getAttribute('HOB') : '';
 
                 if (
                     firstname.includes(searchTerm) ||
                     lastname.includes(searchTerm) ||
-                    party.includes(searchTerm) ||
-                    state.includes(searchTerm) ||
+                    party.toLowerCase().includes(searchTerm) ||
+                    state.toLowerCase().includes(searchTerm) ||
                     district.includes(searchTerm) ||
                     listingName.includes(searchTerm) ||
                     officeID.includes(searchTerm) ||
                     bioguideID.includes(searchTerm) ||
                     officeAuditID.includes(searchTerm) ||
-                    prefix.includes(searchTerm) ||
-                    middleName.includes(searchTerm) ||
-                    suffix.includes(searchTerm)
+                    prefix.toLowerCase().includes(searchTerm) ||
+                    middleName.toLowerCase().includes(searchTerm) ||
+                    suffix.toLowerCase().includes(searchTerm)
                 ) {
-                    const fullName = `${capitalizeWords(prefix)} ${capitalizeWords(firstname)} ${capitalizeWords(middleName)} ${capitalizeWords(lastname)} ${capitalizeWords(suffix)}`;
+                    const fullName = `${prefix} ${firstname} ${middleName} ${lastname} ${suffix}`.replace(/\s+/g, ' ').trim();
+                    const stateDistrict = `${state} ${district}`;
+                    const office = `${roomNum} ${hob}`;
+
+                    let committeesHTML = '';
+                    const committeeAssignments = member.getElementsByTagName('assignment');
+                    if (committeeAssignments.length > 0) {
+                        committeesHTML += '<div class="committees"><span class="label">Committees:</span><ul class="committee-list">';
+                        for (let assignment of committeeAssignments) {
+                            committeesHTML += `<li>${assignment.textContent}</li>`;
+                        }
+                        committeesHTML += '</ul></div>';
+                    }
+
                     results += `
 <div class="wrapper">
   <div class="result">
@@ -173,7 +174,6 @@ function performSearch(searchTerm) {
             }
             document.getElementById('results').innerHTML = results;
 
-            // Add event listeners for copy icons
             document.querySelectorAll('.icon').forEach(icon => {
                 icon.addEventListener('click', (event) => {
                     const text = event.currentTarget.getAttribute('data-text');
@@ -182,10 +182,10 @@ function performSearch(searchTerm) {
                 });
             });
         }
+        searchInProgress = false;
     });
 }
 
-// Call restoreLastSearch when popup opens
 document.addEventListener('DOMContentLoaded', restoreLastSearch);
 
 function copyToClipboard(text, id) {
@@ -202,133 +202,4 @@ function showNotification(message) {
     setTimeout(() => {
         notification.remove();
     }, 2000);
-}
-
-// Function to compare XML data
-function compareXMLData(oldXML, newXML) {
-    const changes = {
-        added: [],
-        removed: [],
-        modified: []
-    };
-    
-    const oldDoc = new DOMParser().parseFromString(oldXML, 'text/xml');
-    const newDoc = new DOMParser().parseFromString(newXML, 'text/xml');
-    
-    const oldMembers = Array.from(oldDoc.getElementsByTagName('Member'));
-    const newMembers = Array.from(newDoc.getElementsByTagName('Member'));
-    
-    // Create maps for easier comparison
-    const oldMemberMap = new Map(oldMembers.map(m => [m.getAttribute('bioguide_id'), m]));
-    const newMemberMap = new Map(newMembers.map(m => [m.getAttribute('bioguide_id'), m]));
-    
-    // Find added and modified members
-    newMembers.forEach(member => {
-        const bioguideId = member.getAttribute('bioguide_id');
-        const oldMember = oldMemberMap.get(bioguideId);
-        
-        if (!oldMember) {
-            changes.added.push(formatMemberData(member));
-        } else if (membersAreDifferent(oldMember, member)) {
-            changes.modified.push({
-                old: formatMemberData(oldMember),
-                new: formatMemberData(member)
-            });
-        }
-    });
-    
-    // Find removed members
-    oldMembers.forEach(member => {
-        const bioguideId = member.getAttribute('bioguide_id');
-        if (!newMemberMap.has(bioguideId)) {
-            changes.removed.push(formatMemberData(member));
-        }
-    });
-    
-    return changes;
-}
-
-function membersAreDifferent(oldMember, newMember) {
-    const attributes = ['firstname', 'lastname', 'party', 'state', 'district', 'office_id'];
-    return attributes.some(attr => 
-        oldMember.getAttribute(attr) !== newMember.getAttribute(attr)
-    );
-}
-
-function formatMemberData(member) {
-    return {
-        name: `${member.getAttribute('firstname')} ${member.getAttribute('lastname')}`,
-        party: member.getAttribute('party'),
-        state: member.getAttribute('state'),
-        district: member.getAttribute('district'),
-        officeId: member.getAttribute('office_id')
-    };
-}
-
-// Add this to your existing chrome.storage.onChanged listener
-chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'local' && changes.membersXML) {
-        const oldXML = changes.membersXML.oldValue;
-        const newXML = changes.membersXML.newValue;
-        
-        if (oldXML && newXML) {
-            const xmlDiffs = compareXMLData(oldXML, newXML);
-            if (xmlDiffs.added.length || xmlDiffs.removed.length || xmlDiffs.modified.length) {
-                // Store the diffs for later viewing
-                chrome.storage.local.set({ xmlDiffs: xmlDiffs });
-                showXMLDiffNotification();
-            }
-        }
-    }
-});
-
-function showXMLDiffNotification() {
-    const notification = document.getElementById('xmlDiffNotification');
-    notification.style.display = 'block';
-}
-
-// Add click handler for viewing changes
-document.getElementById('viewChangesLink').addEventListener('click', (e) => {
-    e.preventDefault();
-    chrome.storage.local.get('xmlDiffs', (result) => {
-        if (result.xmlDiffs) {
-            displayXMLDiffs(result.xmlDiffs);
-        }
-    });
-});
-
-function displayXMLDiffs(diffs) {
-    let diffHTML = '<div class="diff-container">';
-    
-    if (diffs.added.length) {
-        diffHTML += '<h3>Added Members:</h3>';
-        diffs.added.forEach(member => {
-            diffHTML += `<div class="diff-added">
-                <p>+ ${member.name} (${member.party}-${member.state}) District ${member.district}</p>
-            </div>`;
-        });
-    }
-    
-    if (diffs.removed.length) {
-        diffHTML += '<h3>Removed Members:</h3>';
-        diffs.removed.forEach(member => {
-            diffHTML += `<div class="diff-removed">
-                <p>- ${member.name} (${member.party}-${member.state}) District ${member.district}</p>
-            </div>`;
-        });
-    }
-    
-    if (diffs.modified.length) {
-        diffHTML += '<h3>Modified Members:</h3>';
-        diffs.modified.forEach(change => {
-            diffHTML += `<div class="diff-modified">
-                <p>From: ${change.old.name} (${change.old.party}-${change.old.state}) District ${change.old.district}</p>
-                <p>To: ${change.new.name} (${change.new.party}-${change.new.state}) District ${change.new.district}</p>
-            </div>`;
-        });
-    }
-    
-    diffHTML += '</div>';
-    
-    document.getElementById('results').innerHTML = diffHTML;
 }
