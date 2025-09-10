@@ -30,33 +30,9 @@ document.getElementById('clearButton').addEventListener('click', () => {
     }
 });
 
-function setupEventListeners() {
-    document.querySelectorAll('.committees-toggle').forEach(toggle => {
-        toggle.addEventListener('click', (event) => {
-            const button = event.currentTarget;
-            const content = button.nextElementSibling;
-            const isExpanded = button.getAttribute('aria-expanded') === 'true';
-
-            button.setAttribute('aria-expanded', !isExpanded);
-            content.hidden = isExpanded;
-
-            const icon = button.querySelector('i');
-            icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
-        });
-    });
-
-    document.querySelectorAll('.icon').forEach(icon => {
-        icon.addEventListener('click', (event) => {
-            const text = event.currentTarget.getAttribute('data-text');
-            const id = event.currentTarget.getAttribute('data-id');
-            console.log(`Copy ${id}: ${text}`);
-        });
-    });
-}
-
 function restoreLastSearch() {
     if (typeof chrome === 'undefined' || !chrome.storage) {
-        return; 
+        return;
     }
 
     chrome.storage.local.get('lastSearch', result => {
@@ -104,6 +80,7 @@ function performSearch(searchTerm) {
                 const phone = member.getAttribute('phone') ? member.getAttribute('phone') : '';
                 const roomNum = member.getAttribute('room_num') ? member.getAttribute('room_num') : '';
                 const hob = member.getAttribute('HOB') ? member.getAttribute('HOB') : '';
+                const photoURL = member.getAttribute('photoURL') ? member.getAttribute('photoURL') : '';
 
                 if (
                     firstname.includes(searchTerm) ||
@@ -113,8 +90,8 @@ function performSearch(searchTerm) {
                     district.includes(searchTerm) ||
                     listingName.includes(searchTerm) ||
                     officeID.includes(searchTerm) ||
-                    bioguideID.includes(searchTerm) ||
-                    officeAuditID.includes(searchTerm) ||
+                    bioguideID.toLowerCase().includes(searchTerm) ||
+                    officeAuditID.toLowerCase().includes(searchTerm) ||
                     prefix.toLowerCase().includes(searchTerm) ||
                     middleName.toLowerCase().includes(searchTerm) ||
                     suffix.toLowerCase().includes(searchTerm)
@@ -133,9 +110,15 @@ function performSearch(searchTerm) {
                         committeesHTML += '</ul></div>';
                     }
 
+                    let photoHTML = '';
+                    if (photoURL) {
+                        photoHTML = `<img src="${photoURL}" alt="${fullName}" class="member-photo">`;
+                    }
+
                     results += `
 <div class="wrapper">
   <div class="result">
+    ${photoHTML}
     <div class="details">
       <div class="name-container">
         <div class="name-row">
