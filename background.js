@@ -1,5 +1,133 @@
 const XML_URL = 'https://member-info.house.gov/members.xml';
 
+// Function to detect and store changes between XML versions
+function detectAndStoreChanges(previousXML, currentXML) {
+    try {
+        const parser = new DOMParser();
+        const previousDoc = parser.parseFromString(previousXML, 'text/xml');
+        const currentDoc = parser.parseFromString(currentXML, 'text/xml');
+        
+        const previousMembers = Array.from(previousDoc.getElementsByTagName('Member'));
+        const currentMembers = Array.from(currentDoc.getElementsByTagName('Member'));
+        
+        const changes = {
+            added: [],
+            removed: [],
+            modified: [],
+            timestamp: Date.now()
+        };
+        
+        // Create maps for easier lookup
+        const previousMap = new Map();
+        const currentMap = new Map();
+        
+        previousMembers.forEach(member => {
+            const id = member.getAttribute('bioguide_id');
+            if (id) previousMap.set(id, member);
+        });
+        
+        currentMembers.forEach(member => {
+            const id = member.getAttribute('bioguide_id');
+            if (id) currentMap.set(id, member);
+        });
+        
+        // Find added members
+        for (const [id, member] of currentMap) {
+            if (!previousMap.has(id)) {
+                changes.added.push(memberToObject(member));
+            }
+        }
+        
+        // Find removed members
+        for (const [id, member] of previousMap) {
+            if (!currentMap.has(id)) {
+                changes.removed.push(memberToObject(member));
+            }
+        }
+        
+        // Find modified members
+        for (const [id, currentMember] of currentMap) {
+            if (previousMap.has(id)) {
+                const previousMember = previousMap.get(id);
+                if (!membersEqual(previousMember, currentMember)) {
+                    changes.modified.push({
+                        previous: memberToObject(previousMember),
+                        current: memberToObject(currentMember)
+                    });
+                }
+            }
+        }
+        
+        // Store changes
+        chrome.storage.local.set({ latestChanges: changes }, () => {
+            console.log('Changes detected and stored:', changes);
+        });
+        
+    } catch (error) {
+        console.error('Error detecting changes:', error);
+    }
+}
+
+// Helper function to convert Member element to object
+function memberToObject(memberElement) {
+    const member = {
+        bioguide_id: memberElement.getAttribute('bioguide_id'),
+        firstname: memberElement.getAttribute('firstname'),
+        lastname: memberElement.getAttribute('lastname'),
+        party: memberElement.getAttribute('party'),
+        state: memberElement.getAttribute('state'),
+        district: memberElement.getAttribute('district'),
+        office_id: memberElement.getAttribute('office_id'),
+        phone: memberElement.getAttribute('phone'),
+        websiteURL: memberElement.getAttribute('websiteURL'),
+        room_num: memberElement.getAttribute('room_num'),
+        HOB: memberElement.getAttribute('HOB'),
+        committees: []
+    };
+    
+    // Add committee assignments
+    const assignments = memberElement.getElementsByTagName('assignment');
+    for (const assignment of assignments) {
+        member.committees.push(assignment.textContent);
+    }
+    
+    return member;
+}
+
+// Helper function to compare two Member elements
+function membersEqual(member1, member2) {
+    const attributes = [
+        'bioguide_id', 'firstname', 'lastname', 'party', 'state', 'district',
+        'office_id', 'phone', 'websiteURL', 'room_num', 'HOB'
+    ];
+    
+    // Compare attributes
+    for (const attr of attributes) {
+        if (member1.getAttribute(attr) !== member2.getAttribute(attr)) {
+            return false;
+        }
+    }
+    
+    // Compare committee assignments
+    const assignments1 = Array.from(member1.getElementsByTagName('assignment')).map(a => a.textContent);
+    const assignments2 = Array.from(member2.getElementsByTagName('assignment')).map(a => a.textContent);
+    
+    if (assignments1.length !== assignments2.length) {
+        return false;
+    }
+    
+    assignments1.sort();
+    assignments2.sort();
+    
+    for (let i = 0; i < assignments1.length; i++) {
+        if (assignments1[i] !== assignments2[i]) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
 // Function to check if the data is stale (older than 24 hours)
 function isDataStale(lastUpdated) {
     if (!lastUpdated) {
@@ -18,13 +146,26 @@ function fetchAndStoreXML(callback) {
             }
             const lastModified = response.headers.get('last-modified');
             return response.text().then(data => {
-                chrome.storage.local.set({
-                    membersXML: data,
-                    lastModified: lastModified,
-                    lastUpdated: Date.now()
-                }, () => {
-                    console.log('XML file updated and saved.');
-                    if (callback) callback(true);
+                // Get current XML to store as previous before updating
+                chrome.storage.local.get(['membersXML'], result => {
+                    const previousXML = result.membersXML;
+                    
+                    chrome.storage.local.set({
+                        membersXML: data,
+                        previousMembersXML: previousXML || null,
+                        lastModified: lastModified,
+                        lastUpdated: Date.now(),
+                        hasChanges: previousXML && previousXML !== data
+                    }, () => {
+                        console.log('XML file updated and saved.');
+                        
+                        // If we have changes, detect and store them
+                        if (previousXML && previousXML !== data) {
+                            detectAndStoreChanges(previousXML, data);
+                        }
+                        
+                        if (callback) callback(true);
+                    });
                 });
             });
         })
@@ -84,4 +225,13 @@ chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) =
             chrome.notifications.clear('updateNotification');
         });
     }
+});
+
+// Handle messages from other parts of the extension
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'detectChanges') {
+        detectAndStoreChanges(message.previousXML, message.currentXML);
+        sendResponse({ success: true });
+    }
+    return true;
 });
