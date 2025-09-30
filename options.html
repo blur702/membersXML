@@ -54,6 +54,25 @@
 <div id="changesContainer">
     <select id="changesDropdown"></select>
 </div>
+
+<hr>
+
+<h2>Manage URLs</h2>
+<form id="urlForm">
+    <label for="officeName">Office Name:</label><br>
+    <input type="text" id="officeName" name="officeName" required><br>
+    <label for="publicUrl">Public URL:</label><br>
+    <input type="url" id="publicUrl" name="publicUrl" required><br>
+    <label for="editUrl">Edit URL:</label><br>
+    <input type="url" id="editUrl" name="editUrl" required><br><br>
+    <button type="submit">Save URL</button>
+</form>
+
+<div id="urlListContainer">
+    <h3>Saved URLs</h3>
+    <ul id="urlList"></ul>
+</div>
+
 <script src="options.js"></script>
 </body>
 </html>
