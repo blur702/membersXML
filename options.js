@@ -42,24 +42,30 @@ function compareXML(oldXML, newXML) {
 
     const oldMembers = new Map();
     oldDoc.querySelectorAll('Member').forEach(member => {
-        const bioguideId = member.querySelector('bioguide-id').textContent;
-        oldMembers.set(bioguideId, {
-            innerHTML: member.innerHTML,
-            name: member.getAttribute('listing_name'),
-            state: member.getAttribute('state'),
-            district: member.getAttribute('district')
-        });
+        const bioguideIdElement = member.querySelector('bioguide-id');
+        if (bioguideIdElement) {
+            const bioguideId = bioguideIdElement.textContent;
+            oldMembers.set(bioguideId, {
+                innerHTML: member.innerHTML,
+                name: member.getAttribute('listing_name'),
+                state: member.getAttribute('state'),
+                district: member.getAttribute('district')
+            });
+        }
     });
 
     const newMembers = new Map();
     newDoc.querySelectorAll('Member').forEach(member => {
-        const bioguideId = member.querySelector('bioguide-id').textContent;
-        newMembers.set(bioguideId, {
-            innerHTML: member.innerHTML,
-            name: member.getAttribute('listing_name'),
-            state: member.getAttribute('state'),
-            district: member.getAttribute('district')
-        });
+        const bioguideIdElement = member.querySelector('bioguide-id');
+        if (bioguideIdElement) {
+            const bioguideId = bioguideIdElement.textContent;
+            newMembers.set(bioguideId, {
+                innerHTML: member.innerHTML,
+                name: member.getAttribute('listing_name'),
+                state: member.getAttribute('state'),
+                district: member.getAttribute('district')
+            });
+        }
     });
 
     const changes = {
