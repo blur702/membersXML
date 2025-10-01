@@ -1,13 +1,28 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     padding: 20px;
-    background-color: #f0f2f5;
     color: #1c1e21;
     transition: background-color 0.3s, color 0.3s;
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/a/a3/United_States_Capitol_west_front_edit2.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.85); /* Light overlay */
+    z-index: -1;
 }
 
 h1, h2, h3 {
-    color: #333;
+    color: #000;
 }
 
 .container {
@@ -82,10 +97,26 @@ h1, h2, h3 {
     font-size: 12px;
 }
 
+a {
+    color: #005a9c; /* A darker blue for better contrast */
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+#urlTable a {
+    color: #005a9c;
+}
+
 /* Dark mode styles */
 @media (prefers-color-scheme: dark) {
+    body::before {
+        background-color: rgba(0, 0, 0, 0.75); /* Dark overlay */
+    }
+
     body {
-        background-color: #18191a;
         color: #e4e6eb;
     }
 
@@ -132,5 +163,13 @@ h1, h2, h3 {
 
     #urlTable tr:nth-child(even) {
         background-color: #2c2d2e;
+    }
+
+    a {
+        color: #8ab4f8; /* A lighter blue for dark mode */
+    }
+
+    #urlTable a {
+        color: #8ab4f8;
     }
 }
