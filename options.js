@@ -159,29 +159,74 @@ function loadAndDisplayUrls() {
         urlList.innerHTML = ''; // Clear the list
 
         if (savedUrls.length === 0) {
-            urlList.innerHTML = '<li>No URLs saved yet.</li>';
+            const row = urlList.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = 4;
+            cell.textContent = 'No URLs saved yet.';
             return;
         }
 
         savedUrls.forEach(urlEntry => {
-            const listItem = document.createElement('li');
-            listItem.innerHTML = `
-                <strong>${urlEntry.officeName}</strong><br>
-                Public: <a href="${urlEntry.publicUrl}" target="_blank">${urlEntry.publicUrl}</a><br>
-                Edit: <a href="${urlEntry.editUrl}" target="_blank">${urlEntry.editUrl}</a><br>
+            const row = urlList.insertRow();
+            row.dataset.id = urlEntry.id;
+
+            row.innerHTML = `
+                <td>${urlEntry.officeName}</td>
+                <td><a href="${urlEntry.publicUrl}" target="_blank">${urlEntry.publicUrl}</a></td>
+                <td><a href="${urlEntry.editUrl}" target="_blank">${urlEntry.editUrl}</a></td>
+                <td class="action-buttons">
+                    <button class="edit-btn">Edit</button>
+                    <button class="delete-btn">Delete</button>
+                </td>
             `;
 
-            const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Delete';
-            deleteButton.addEventListener('click', () => {
-                deleteUrl(urlEntry.id);
-            });
-
-            listItem.appendChild(deleteButton);
-            urlList.appendChild(listItem);
+            row.querySelector('.edit-btn').addEventListener('click', () => editUrlEntry(urlEntry.id));
+            row.querySelector('.delete-btn').addEventListener('click', () => deleteUrl(urlEntry.id));
         });
     });
 }
+
+// Function to enable editing for a URL entry
+function editUrlEntry(id) {
+    const row = document.querySelector(`tr[data-id='${id}']`);
+    const cells = row.querySelectorAll('td');
+
+    const officeName = cells[0].textContent;
+    const publicUrl = cells[1].querySelector('a').href;
+    const editUrl = cells[2].querySelector('a').href;
+
+    cells[0].innerHTML = `<input type="text" value="${officeName}">`;
+    cells[1].innerHTML = `<input type="url" value="${publicUrl}">`;
+    cells[2].innerHTML = `<input type="url" value="${editUrl}">`;
+
+    cells[3].innerHTML = `<button class="save-btn">Save</button>`;
+    row.querySelector('.save-btn').addEventListener('click', () => saveUrlEntry(id));
+}
+
+// Function to save an updated URL entry
+function saveUrlEntry(id) {
+    const row = document.querySelector(`tr[data-id='${id}']`);
+    const inputs = row.querySelectorAll('input');
+
+    const updatedEntry = {
+        officeName: inputs[0].value,
+        publicUrl: inputs[1].value,
+        editUrl: inputs[2].value,
+        id: id
+    };
+
+    chrome.storage.local.get({ savedUrls: [] }, (result) => {
+        let savedUrls = result.savedUrls;
+        const index = savedUrls.findIndex(entry => entry.id === id);
+        if (index !== -1) {
+            savedUrls[index] = updatedEntry;
+            chrome.storage.local.set({ savedUrls }, () => {
+                loadAndDisplayUrls(); // Refresh the list
+            });
+        }
+    });
+}
+
 
 // Function to delete a URL
 function deleteUrl(id) {
