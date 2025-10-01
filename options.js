@@ -41,15 +41,25 @@ function compareXML(oldXML, newXML) {
     const newDoc = parser.parseFromString(newXML, "application/xml");
 
     const oldMembers = new Map();
-    oldDoc.querySelectorAll('member').forEach(member => {
+    oldDoc.querySelectorAll('Member').forEach(member => {
         const bioguideId = member.querySelector('bioguide-id').textContent;
-        oldMembers.set(bioguideId, member.innerHTML);
+        oldMembers.set(bioguideId, {
+            innerHTML: member.innerHTML,
+            name: member.getAttribute('listing_name'),
+            state: member.getAttribute('state'),
+            district: member.getAttribute('district')
+        });
     });
 
     const newMembers = new Map();
-    newDoc.querySelectorAll('member').forEach(member => {
+    newDoc.querySelectorAll('Member').forEach(member => {
         const bioguideId = member.querySelector('bioguide-id').textContent;
-        newMembers.set(bioguideId, member.innerHTML);
+        newMembers.set(bioguideId, {
+            innerHTML: member.innerHTML,
+            name: member.getAttribute('listing_name'),
+            state: member.getAttribute('state'),
+            district: member.getAttribute('district')
+        });
     });
 
     const changes = {
@@ -59,18 +69,34 @@ function compareXML(oldXML, newXML) {
     };
 
     // Check for added and updated members
-    for (const [bioguideId, newMemberHTML] of newMembers.entries()) {
-        if (!oldMembers.has(bioguideId)) {
-            changes.added.push(bioguideId);
-        } else if (oldMembers.get(bioguideId) !== newMemberHTML) {
-            changes.updated.push(bioguideId);
+    for (const [bioguideId, newMember] of newMembers.entries()) {
+        const oldMember = oldMembers.get(bioguideId);
+        if (!oldMember) {
+            changes.added.push({
+                bioguideId: bioguideId,
+                name: newMember.name,
+                state: newMember.state,
+                district: newMember.district
+            });
+        } else if (oldMember.innerHTML !== newMember.innerHTML) {
+            changes.updated.push({
+                bioguideId: bioguideId,
+                name: newMember.name,
+                state: newMember.state,
+                district: newMember.district
+            });
         }
     }
 
     // Check for removed members
-    for (const bioguideId of oldMembers.keys()) {
+    for (const [bioguideId, oldMember] of oldMembers.entries()) {
         if (!newMembers.has(bioguideId)) {
-            changes.removed.push(bioguideId);
+            changes.removed.push({
+                bioguideId: bioguideId,
+                name: oldMember.name,
+                state: oldMember.state,
+                district: oldMember.district
+            });
         }
     }
 
@@ -91,9 +117,10 @@ function displayChanges(changes) {
         if (changes.added.length > 0) {
             const optgroup = document.createElement('optgroup');
             optgroup.label = `Added (${changes.added.length})`;
-            changes.added.forEach(id => {
+            changes.added.forEach(member => {
                 const option = document.createElement('option');
-                option.text = id;
+                option.text = `${member.name} (${member.state}-${member.district})`;
+                option.value = member.bioguideId;
                 optgroup.appendChild(option);
             });
             dropdown.add(optgroup);
@@ -101,9 +128,10 @@ function displayChanges(changes) {
         if (changes.removed.length > 0) {
             const optgroup = document.createElement('optgroup');
             optgroup.label = `Removed (${changes.removed.length})`;
-            changes.removed.forEach(id => {
+            changes.removed.forEach(member => {
                 const option = document.createElement('option');
-                option.text = id;
+                option.text = `${member.name} (${member.state}-${member.district})`;
+                option.value = member.bioguideId;
                 optgroup.appendChild(option);
             });
             dropdown.add(optgroup);
@@ -111,9 +139,10 @@ function displayChanges(changes) {
         if (changes.updated.length > 0) {
             const optgroup = document.createElement('optgroup');
             optgroup.label = `Updated (${changes.updated.length})`;
-            changes.updated.forEach(id => {
+            changes.updated.forEach(member => {
                 const option = document.createElement('option');
-                option.text = id;
+                option.text = `${member.name} (${member.state}-${member.district})`;
+                option.value = member.bioguideId;
                 optgroup.appendChild(option);
             });
             dropdown.add(optgroup);
