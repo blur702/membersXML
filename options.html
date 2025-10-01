@@ -2,77 +2,45 @@
 <html>
 <head>
     <title>Settings</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-        }
-        #status {
-            margin-top: 10px;
-            font-size: 14px;
-        }
-
-        /* Light mode styles */
-        @media (prefers-color-scheme: light) {
-            body {
-                background-color: white;
-                color: black;
-            }
-            button {
-                background-color: #f0f0f0;
-                color: black;
-            }
-            #status {
-                color: green;
-            }
-        }
-
-        /* Dark mode styles */
-        @media (prefers-color-scheme: dark) {
-            body {
-                background-color: #121212;
-                color: white;
-            }
-            button {
-                background-color: #333;
-                color: white;
-            }
-            #status {
-                color: lightgreen;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="options.css">
 </head>
 <body>
-<h1>Settings</h1>
-<button id="updateButton">Download and Update XML</button>
-<div id="status"></div>
-<div id="changesContainer">
-    <select id="changesDropdown"></select>
-</div>
+    <h1>Settings</h1>
+    <button id="updateButton" class="button">Download and Update XML</button>
+    <div id="status"></div>
+    <div id="changesContainer">
+        <select id="changesDropdown"></select>
+    </div>
 
-<hr>
+    <hr>
 
-<h2>Manage URLs</h2>
-<form id="urlForm">
-    <label for="officeName">Office Name:</label><br>
-    <input type="text" id="officeName" name="officeName" required><br>
-    <label for="publicUrl">Public URL:</label><br>
-    <input type="url" id="publicUrl" name="publicUrl" required><br>
-    <label for="editUrl">Edit URL:</label><br>
-    <input type="url" id="editUrl" name="editUrl" required><br><br>
-    <button type="submit">Save URL</button>
-</form>
+    <div class="container">
+        <h2>Manage URLs</h2>
+        <form id="urlForm" class="form-container">
+            <input type="text" id="officeName" name="officeName" placeholder="Office Name" required>
+            <input type="url" id="publicUrl" name="publicUrl" placeholder="Public URL" required>
+            <input type="url" id="editUrl" name="editUrl" placeholder="Edit URL" required>
+            <button type="submit" class="button">Save URL</button>
+        </form>
 
-<div id="urlListContainer">
-    <h3>Saved URLs</h3>
-    <ul id="urlList"></ul>
-</div>
+        <div id="urlListContainer">
+            <h3>Saved URLs</h3>
+            <table id="urlTable">
+                <thead>
+                    <tr>
+                        <th>Office Name</th>
+                        <th>Public URL</th>
+                        <th>Edit URL</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="urlList">
+                    <!-- URL entries will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-<script src="options.js"></script>
+    <script src="options.js"></script>
 </body>
 </html>
