@@ -127,3 +127,72 @@ chrome.storage.local.get('changes', (result) => {
         displayChanges(result.changes);
     }
 });
+
+// --- URL Management ---
+
+const urlForm = document.getElementById('urlForm');
+const urlList = document.getElementById('urlList');
+
+// Handle form submission
+urlForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const officeName = document.getElementById('officeName').value;
+    const publicUrl = document.getElementById('publicUrl').value;
+    const editUrl = document.getElementById('editUrl').value;
+
+    const newUrlEntry = { officeName, publicUrl, editUrl, id: Date.now() };
+
+    chrome.storage.local.get({ savedUrls: [] }, (result) => {
+        const savedUrls = result.savedUrls;
+        savedUrls.push(newUrlEntry);
+        chrome.storage.local.set({ savedUrls }, () => {
+            urlForm.reset();
+            loadAndDisplayUrls();
+        });
+    });
+});
+
+// Function to load and display URLs
+function loadAndDisplayUrls() {
+    chrome.storage.local.get({ savedUrls: [] }, (result) => {
+        const savedUrls = result.savedUrls;
+        urlList.innerHTML = ''; // Clear the list
+
+        if (savedUrls.length === 0) {
+            urlList.innerHTML = '<li>No URLs saved yet.</li>';
+            return;
+        }
+
+        savedUrls.forEach(urlEntry => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `
+                <strong>${urlEntry.officeName}</strong><br>
+                Public: <a href="${urlEntry.publicUrl}" target="_blank">${urlEntry.publicUrl}</a><br>
+                Edit: <a href="${urlEntry.editUrl}" target="_blank">${urlEntry.editUrl}</a><br>
+            `;
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.addEventListener('click', () => {
+                deleteUrl(urlEntry.id);
+            });
+
+            listItem.appendChild(deleteButton);
+            urlList.appendChild(listItem);
+        });
+    });
+}
+
+// Function to delete a URL
+function deleteUrl(id) {
+    chrome.storage.local.get({ savedUrls: [] }, (result) => {
+        let savedUrls = result.savedUrls;
+        savedUrls = savedUrls.filter(urlEntry => urlEntry.id !== id);
+        chrome.storage.local.set({ savedUrls }, () => {
+            loadAndDisplayUrls();
+        });
+    });
+}
+
+// Initial load
+loadAndDisplayUrls();

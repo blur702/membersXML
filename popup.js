@@ -52,12 +52,15 @@ function restoreLastSearch() {
 
 function performSearch(searchTerm) {
     searchInProgress = true;
-    chrome.storage.local.get('membersXML', result => {
+    chrome.storage.local.get(['membersXML', 'savedUrls'], result => {
+        let memberResults = '';
+        let urlResults = '';
+
+        // Search members from XML
         if (result.membersXML) {
             const parser = new DOMParser();
             const data = parser.parseFromString(result.membersXML, 'text/xml');
             const members = data.getElementsByTagName('Member');
-            let results = '';
 
             const createCopyIcon = (text, id) => {
                 return `<i class="fas fa-copy icon" data-text="${text}" data-id="${id}"></i>`;
@@ -115,7 +118,7 @@ function performSearch(searchTerm) {
                         photoHTML = `<img src="${photoURL}" alt="${fullName}" class="member-photo">`;
                     }
 
-                    results += `
+                    memberResults += `
 <div class="wrapper">
   <div class="result">
     ${photoHTML}
@@ -159,16 +162,52 @@ function performSearch(searchTerm) {
 </div>`;
                 }
             }
-            document.getElementById('results').innerHTML = results;
-
-            document.querySelectorAll('.icon').forEach(icon => {
-                icon.addEventListener('click', (event) => {
-                    const text = event.currentTarget.getAttribute('data-text');
-                    const id = event.currentTarget.getAttribute('data-id');
-                    copyToClipboard(text, id);
-                });
-            });
         }
+
+        // Search saved URLs
+        if (result.savedUrls && result.savedUrls.length > 0) {
+            const savedUrls = result.savedUrls;
+            let matchingUrls = '';
+            savedUrls.forEach(urlEntry => {
+                if (urlEntry.officeName.toLowerCase().includes(searchTerm)) {
+                    matchingUrls += `
+<div class="wrapper">
+  <div class="result">
+    <div class="details">
+      <div class="name-container">
+        <div class="name-row">
+          <span class="info">
+            <strong>${urlEntry.officeName}</strong>
+          </span>
+        </div>
+      </div>
+      <div class="office-details">
+        <div class="links">
+          <a class="website" href="${urlEntry.publicUrl}" target="_blank">Public Link</a>
+          <a class="website" href="${urlEntry.editUrl}" target="_blank">Edit Link</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`;
+                }
+            });
+
+            if (matchingUrls) {
+                urlResults = '<h2>Saved URLs</h2>' + matchingUrls;
+            }
+        }
+
+        document.getElementById('results').innerHTML = memberResults + urlResults;
+
+        document.querySelectorAll('.icon').forEach(icon => {
+            icon.addEventListener('click', (event) => {
+                const text = event.currentTarget.getAttribute('data-text');
+                const id = event.currentTarget.getAttribute('data-id');
+                copyToClipboard(text, id);
+            });
+        });
+
         searchInProgress = false;
     });
 }
