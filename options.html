@@ -16,6 +16,11 @@
 
     <div class="container">
         <h2>Manage URLs</h2>
+        <div style="margin-bottom: 1em;">
+            <button id="importButton" class="button">Import URLs</button>
+            <button id="exportButton" class="button">Export URLs</button>
+            <input type="file" id="importFile" hidden accept=".json">
+        </div>
         <form id="urlForm" class="form-container">
             <input type="text" id="officeName" name="officeName" placeholder="Office Name" required>
             <input type="url" id="publicUrl" name="publicUrl" placeholder="Public URL" required>

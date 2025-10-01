@@ -239,5 +239,59 @@ function deleteUrl(id) {
     });
 }
 
+// --- Import/Export ---
+
+const importButton = document.getElementById('importButton');
+const exportButton = document.getElementById('exportButton');
+const importFile = document.getElementById('importFile');
+
+exportButton.addEventListener('click', () => {
+    chrome.storage.local.get({ savedUrls: [] }, (result) => {
+        const savedUrls = result.savedUrls;
+        const dataStr = JSON.stringify(savedUrls, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'urls.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+});
+
+importButton.addEventListener('click', () => {
+    importFile.click();
+});
+
+importFile.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) {
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const importedUrls = JSON.parse(e.target.result);
+            if (Array.isArray(importedUrls)) {
+                chrome.storage.local.set({ savedUrls: importedUrls }, () => {
+                    loadAndDisplayUrls();
+                    alert('URLs imported successfully!');
+                });
+            } else {
+                alert('Invalid file format.');
+            }
+        } catch (error) {
+            alert('Error reading file. Please ensure it is a valid JSON file.');
+            console.error('Error parsing JSON:', error);
+        }
+    };
+    reader.readAsText(file);
+});
+
+
 // Initial load
 loadAndDisplayUrls();
